@@ -239,6 +239,7 @@ dependencies = [
     { name = "mir-eval" },
     { name = "mirdata" },
     { name = "numpy" },
+    { name = "pyworld" },
     { name = "scipy" },
     { name = "soundfile" },
     { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
@@ -261,6 +262,7 @@ requires-dist = [
     { name = "mir-eval", specifier = ">=0.8.2" },
     { name = "mirdata", specifier = ">=1.0.0" },
     { name = "numpy", specifier = ">=2.5.3" },
+    { name = "pyworld", specifier = ">=0.3.5" },
     { name = "scipy", specifier = ">=1.18.1" },
     { name = "soundfile", specifier = ">=0.14.0" },
     { name = "torch", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cpu" },
@@ -1073,6 +1075,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee498c46e004a0eb49bc148f2fd230864601a86dcf6db/python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3", size = 342432, upload-time = "2024-03-01T18:36:20.211Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427", size = 229892, upload-time = "2024-03-01T18:36:18.57Z" },
+]
+
+[[package]]
+name = "pyworld"
+version = "0.3.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a5/0f/c78d631ffbb4c1aaebf80ff2bf9e791213b381dbe404f9ce1a3eb3672931/pyworld-0.3.5.tar.gz", hash = "sha256:1b93e53cddb67a0e4faa34d6cf919ac6c662feb1c8c0ed901d71b595ab396aa3", size = 261021, upload-time = "2025-01-20T16:07:51.261Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/29/9c9c0dad7575faea3dbc3cbc8b69e0365b35912332068afd79a2b93d822d/pyworld-0.3.5-cp312-cp312-win_amd64.whl", hash = "sha256:59b48961c2ac34fb01efeb1a77d3eda69c41b676858cbc3a82dfb7602c0c762b", size = 222700, upload-time = "2025-01-21T15:58:47.959Z" },
 ]
 
 [[package]]

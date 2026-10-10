@@ -11,6 +11,7 @@ dependencies = [
     "mir-eval>=0.8.2",
     "mirdata>=1.0.0",
     "numpy>=2.5.3",
+    "pyworld>=0.3.5",
     "scipy>=1.18.1",
     "soundfile>=0.14.0",
     "torch==2.11.0",
