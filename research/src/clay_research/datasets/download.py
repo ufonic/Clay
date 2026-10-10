@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import platform
 import shutil
+import struct
 import subprocess
 import sys
 import urllib.error
@@ -98,9 +99,50 @@ def is_junk(member: str) -> bool:
     return member.startswith("__MACOSX/") or member.rsplit("/", 1)[-1] == ".DS_Store"
 
 
+LOCAL_HEADER = struct.Struct("<4s22xHH")  # signature ... name length, extra length
+
+
+def repair_wrapped_offsets(z: zipfile.ZipFile) -> int:
+    """Fix member offsets in >4 GB zips written without ZIP64 (e.g. macOS Archive Utility).
+
+    Such archives store each member's position in 32 bits, so positions past 4 GB wrap,
+    and Python's zipfile then mis-locates some members ("Bad magic number for file
+    header"). For each member, try its offset and ±4 GB and keep the one where the
+    member's own local header, with the matching file name, actually is. Returns how
+    many offsets were changed; raises if a member can't be found.
+    """
+    size = z.fp.seek(0, 2)
+    changed = 0
+    for info in z.infolist():
+        for candidate in (
+            info.header_offset,
+            info.header_offset - (1 << 32),
+            info.header_offset + (1 << 32),
+        ):
+            if not 0 <= candidate <= size - LOCAL_HEADER.size:
+                continue
+            z.fp.seek(candidate)
+            signature, name_len, _ = LOCAL_HEADER.unpack(z.fp.read(LOCAL_HEADER.size))
+            if signature != b"PK\x03\x04":
+                continue
+            raw_name = z.fp.read(name_len)
+            if (
+                raw_name.decode("utf-8", "replace") == info.filename
+                or raw_name.decode("cp437", "replace") == info.filename
+            ):
+                changed += candidate != info.header_offset
+                info.header_offset = candidate
+                break
+        else:
+            raise zipfile.BadZipFile(f"can't locate {info.filename!r} in {z.filename}")
+    return changed
+
+
 def extract(archive: Path, out_dir: Path, keep_prefixes: tuple[str, ...]) -> None:
     if archive.suffix == ".zip":
         with zipfile.ZipFile(archive) as z:
+            if repaired := repair_wrapped_offsets(z):
+                print(f"  repaired {repaired} wrapped offsets in {archive.name}")
             members = [
                 m
                 for m in z.namelist()
