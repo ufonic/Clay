@@ -12,7 +12,7 @@ The owner has an old Mac and would rather not use it. Everything that can run he
 
 | Checkpoint | When | What the owner does | Est. time |
 |---|---|---|---|
-| **A** | Phase 0 gate | Load pass-through AU in Logic and VST3 in Live; standalone opens | ~30 min |
+| **A** | Before Phase 3 starts (moved from the Phase 0 gate) | Load the plugin AU in Logic and VST3 in Live; standalone opens | ~30 min |
 | **B** | Phase 3 gate | Tune a lead vocal in Live and Logic; save, reopen, confirm recall | ~1–2 hours |
 | **C** | Phase 4 gate | ARA in Logic; Max for Live auto-capture; FL Studio + Bitwig load and recall | ~2 hours |
 | **D** | Phase 7 gate | 16-track session opens and plays; batch export runs | ~1 hour |
@@ -34,7 +34,7 @@ Every gate below uses these definitions. Change them only with owner approval, a
 
 | Metric | Definition | Tool |
 |---|---|---|
-| **Note F1** | Onset-only note F-measure: onset tolerance 50 ms, pitch tolerance 50 cents, offsets ignored (`offset_ratio=None`). Also report F1 with offsets (offset ratio 0.2) for information. | `mir_eval.transcription.precision_recall_f1_overlap` |
+| **Note F1** | Onset-only note F-measure: onset tolerance 50 ms, pitch tolerance 50 cents, offsets ignored (`offset_ratio=None`). Also report F1 with offsets (offset ratio 0.2) for information. On vocadito, scored against **each** annotator; `note_f1_mean` = mean of the two. | `mir_eval.transcription.precision_recall_f1_overlap` |
 | **Raw pitch accuracy (RPA)** | Share of voiced reference frames whose estimate is within 50 cents. | `mir_eval.melody.raw_pitch_accuracy` |
 | **Voicing** | Voicing recall and false-alarm rate. | `mir_eval.melody.voicing_measures` |
 | **Cents error** | Median and 95th-percentile absolute error, in cents, over frames voiced in both reference and estimate. | harness |
@@ -45,7 +45,7 @@ Every gate below uses these definitions. Change them only with owner approval, a
 | **Key accuracy** (Phase 5) | Exact match (tonic + major/minor) rate. Also report the MIREX weighted score (fifths, relative, parallel errors get partial credit). | `mir_eval.key.evaluate` |
 | **Transition error** (Phase 3+) | After snapping every note to its nearest semitone, median cents error of note centers ≤ 3 cents vs. target. | harness |
 
-Datasets per metric: owner's 5 labeled takes (Note F1, cents error), MIR-1K and VocalSet (RPA, voicing, cents error), GuitarSet and MAESTRO (Phase 5–6 Note F1), Phase 5 test sets below (tempo, key).
+Datasets per metric: **vocadito** (Note F1; 40 solo vocals, two annotators, CC BY 4.0), MIR-1K and vocadito (RPA, voicing, cents error), VocalSet (listening material), owner's labeled takes (optional extra Note F1 check), GuitarSet and MAESTRO (Phase 5–6 Note F1), Phase 5 test sets below (tempo, key).
 
 ---
 
@@ -120,14 +120,14 @@ Goal: everything needed to measure, build, and load a plugin, before any real DS
 | 0.3 | CMake skeleton + presets; GitHub Actions on macOS (universal) and Windows | green CI |
 | 0.4 | `/research` uv project; download scripts + loaders for MIR-1K, VocalSet (GuitarSet, MAESTRO later) | pytest on loaders (small fixture clips) |
 | 0.5 | Scoring harness: all metrics above, one command, Markdown + JSON report | pytest with known-answer fixtures |
-| 0.6 | Labeling script (load take, show pYIN guess, owner corrects notes, save labels) | 🖐 owner labels 5 takes |
+| 0.6 | Labeling script (load take, show pYIN guess, owner corrects notes, save labels) | tests + Chrome check; owner labeling optional (gate uses vocadito) |
 | 0.7 | Pass-through plugin (VST3, AU, CLAP, standalone), latency = 0, pluginval in CI | pluginval ≥ 5 + clap-validator + auval in CI; 🖐 Live (Windows), 🍎 Logic + Live (Mac). FL Studio + Bitwig hands-on moved to the Phase 4 gate |
 | 0.8 | Transfer spike in Live: capture clip to buffer, play back in sync incl. tempo change and warped clip | 🖐 owner, in Live |
 | 0.9 | Real-time lint (flags allocation, locks, I/O, logging in audio callbacks) + stress test | lint catches seeded violations |
 | 0.10 | UI mockups: blob view, toolbar, inspector, note assignment mode, multitrack | 🖐 owner approves |
 | 0.11 | `docs/analysis/SPEC.md` | owner confirms |
 
-**Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in Live on Windows and in Logic + Live at 🍎 Mac checkpoint A (FL Studio and Bitwig: automated validators now, hands-on at the Phase 4 gate); the owner approves the mockups.
+**Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in Live on Windows (FL Studio, Bitwig: validators now, hands-on at the Phase 4 gate; Logic + Live on Mac: 🍎 checkpoint A before Phase 3); the owner approves the mockups.
 
 ---
 
@@ -146,9 +146,9 @@ Goal: prove analysis and monophonic resynthesis sound good, in Python, before wr
 | 1.7 | Render scripts: ±1, ±2 semitone and ±10% time versions of every clip | renders exist |
 
 **Gate:**
-- Note F1 ≥ 0.95 on the owner's 5 labeled takes; RPA ≥ 0.95 on MIR-1K.
-- Cents error: median ≤ 10, 95th percentile ≤ 50 on the owner's takes.
-- 👂 Owner hears no objectionable artifacts at ±2 semitones on 5 vocals.
+- Note F1 (`note_f1_mean`) ≥ **0.740 on vocadito**: as good as a second human (the two annotators agree at 0.740). Baseline 0.556.
+- RPA ≥ 0.95 on MIR-1K (baseline 0.964); cents error median ≤ 10, 95th percentile ≤ 50 on vocadito (baseline 8.5 / 57.8).
+- 👂 Owner hears no objectionable artifacts at ±2 semitones on 5 vocals (public: VocalSet / vocadito; the owner's own takes if available).
 
 ---
 

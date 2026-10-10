@@ -164,7 +164,8 @@ uv run --project research python -m clay_research.harness.score --dataset mir1k 
 
 ## 9. Test data
 
-- The owner's own dry vocal takes (about 12). Five of them get hand-checked note labels.
+- vocadito: 40 solo vocals with notes from two annotators: the Phase 1 note-detection gate set.
+- The owner's own dry vocal takes: optional extra checks (labeler: `docs/labeling-guide.md`).
 - MIR-1K: solo vocals with frame-level pitch labels.
 - VocalSet: varied singers and techniques (vibrato, belting, breathy).
 - GuitarSet: guitar with note annotations (Phase 5, Phase 6).
@@ -179,20 +180,20 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 
 **Current phase: 0 · Foundation** (update this section as phases complete; full plan in `docs/ROADMAP.md`)
 
-- [ ] 0.1 `git init`, GitHub repo, `.gitignore`, `.clang-format`, ruff config, `docs/decisions.md`
+- [x] 0.1 `git init`, GitHub repo, `.gitignore`, `.clang-format`, ruff config, `docs/decisions.md`
 - [x] 0.2 Pin JUCE 9, ARA SDK, clap-juce-extensions, Catch2 as submodules in `/third_party`
 - [x] 0.3 CMake skeleton + `CMakePresets.json`; GitHub Actions building on macOS and Windows
 - [x] 0.4 `/research` uv project; dataset download scripts and a loader returning audio + labels
 - [x] 0.5 Scoring harness: note F1, raw pitch accuracy, cents error; one-command report
-- [ ] 0.6 Labeling script so the owner can label notes in 5 takes (tool done: `docs/labeling-guide.md`) · 🖐 owner labels the takes
-- [ ] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + pluginval in CI · 🖐 Live 12 ✓ (2026-10-10: loads, passes audio, save/reopen); FL Studio + Bitwig hands-on deferred to the Phase 4 gate (covered meanwhile by pluginval + clap-validator in CI); Logic + Live on Mac at 🍎 Mac checkpoint A
+- [x] 0.6 Labeling tool (`docs/labeling-guide.md`). Owner labeling is optional: the note gate uses vocadito (decision 2026-10-10)
+- [x] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + validators in CI · 🖐 Live 12 ✓ (2026-10-10: loads, passes audio, save/reopen); FL Studio + Bitwig hands-on at the Phase 4 gate; Logic + Live on Mac at 🍎 checkpoint A, before Phase 3
 - [x] 0.8 Transfer spike: record a Live clip into a buffer and play it back in sync (playhead, tempo, warping) verified by owner in Live 12 (Windows) 2026-10-10: null test −80 to −85 dB, also with Warp + tempo change and looping
 - [x] 0.9 Real-time safety lint script and audio-thread stress test
 - [x] 0.10 Editor UI mockups (blob view, toolbar, inspector, multitrack): approved 2026-10-10, https://claude.ai/artifact/77BtemqUgsYvpv3hHK1REY
 - [x] 0.11 `SPEC.md` for the analysis module: approved 2026-10-10 (`docs/analysis/SPEC.md`)
-- [ ] 0.12 Replace § 7 planned commands with the real ones
+- [x] 0.12 Replace § 7 planned commands with the real ones
 
-**Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in Live on Windows and in Logic + Live at Mac checkpoint A (FL Studio and Bitwig: automated validators now, hands-on at the Phase 4 gate); the owner approves the mockups.
+**Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in Live on Windows (FL Studio and Bitwig: validators now, hands-on at the Phase 4 gate; Mac checkpoint A before Phase 3); the owner approves the mockups.
 
 ---
 

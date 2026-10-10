@@ -55,9 +55,9 @@ Plus `analysis_version`, `sample_rate`, `duration`, and the settings used.
 
 | Measure | Target (Phase 1 gate) | Data |
 |---|---|---|
-| Note F1 (onset ±50 ms, pitch ±50 cents) | ≥ 0.95 | Owner's 5 labeled takes |
+| Note F1 (onset ±50 ms, pitch ±50 cents), mean vs both annotators | ≥ 0.740 (human agreement) | vocadito |
 | Raw pitch accuracy | ≥ 0.95 | MIR-1K |
-| Cents error median / 95th pct | ≤ 10 / ≤ 50 | Owner's takes |
+| Cents error median / 95th pct | ≤ 10 / ≤ 50 | vocadito |
 | Voicing false alarm | report; aim ≤ 0.10 | MIR-1K |
 
 ## 6. Speed and caching

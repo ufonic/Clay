@@ -25,16 +25,24 @@ from pathlib import Path
 
 import numpy as np
 
-from clay_research.datasets import mir1k
+from clay_research.datasets import mir1k, vocadito
 from clay_research.datasets.common import REPO_ROOT
+from clay_research.labeling.guess import guess_notes
 
-from .metrics import frame_scores
+from .metrics import frame_scores, note_scores
 from .trackers import TRACKERS
 
-DATASETS = {"mir1k": mir1k}
+DATASETS = {"mir1k": mir1k, "vocadito": vocadito}
+# Pitch track -> notes. "guess" is the labeler's simple first-guess segmenter (baseline);
+# Phase 1 adds the HMM segmenter.
+SEGMENTERS = {"guess": guess_notes}
 
-# Summary metrics and which direction is better (+1 higher, -1 lower).
+# Summary metrics and which direction is better (+1 higher, -1 lower). A report only
+# includes the ones its dataset can measure.
 SUMMARY_METRICS = {
+    "note_f1_mean": +1,  # Phase 1 gate: mean over annotators of per-clip-mean note F1
+    "note_f1_a1": +1,
+    "note_f1_a2": +1,
     "raw_pitch_accuracy": +1,
     "voicing_recall": +1,
     "voicing_false_alarm": -1,
@@ -47,20 +55,36 @@ SUMMARY_METRICS = {
 class Job:
     dataset: str
     tracker: str
+    segmenter: str
     clip_id: str
 
 
 def score_clip(job: Job) -> dict:
-    clip = DATASETS[job.dataset].load(job.clip_id)
+    module = DATASETS[job.dataset]
+    clip = module.load(job.clip_id)
     est = TRACKERS[job.tracker](clip.audio, clip.sample_rate)
-    return {"clip_id": job.clip_id, **frame_scores(clip.pitch, est).as_dict()}
+    row: dict = {"clip_id": job.clip_id}
+    if clip.pitch is not None:
+        row.update(frame_scores(clip.pitch, est).as_dict())
+    annotators = getattr(module, "ANNOTATORS", ())
+    if annotators:
+        est_notes = SEGMENTERS[job.segmenter](est)
+        f1s = []
+        for a in annotators:
+            f1 = note_scores(module.load_notes(job.clip_id, a), est_notes).f1
+            row[f"note_f1_{a.lower()}"] = f1
+            f1s.append(f1)
+        row["note_f1_mean"] = float(np.mean(f1s))
+    return row
 
 
 def summarize(rows: list[dict]) -> dict[str, float]:
     """Mean over clips of each per-clip metric, skipping clips with no value."""
     summary = {}
     for key in SUMMARY_METRICS:
-        values = np.array([r[key] for r in rows], dtype=float)
+        if not any(key in r for r in rows):
+            continue
+        values = np.array([r.get(key, math.nan) for r in rows], dtype=float)
         values = values[np.isfinite(values)]
         summary[key] = float(values.mean()) if values.size else float("nan")
     summary["clips"] = len(rows)
@@ -89,7 +113,9 @@ def write_report(
     json_path, md_path = out / f"{name}.json", out / f"{name}.md"
     json_path.write_text(json.dumps({**meta, "summary": summary, "clips": rows}, indent=1))
 
-    worst = sorted(rows, key=lambda r: r["raw_pitch_accuracy"])[:10]
+    metrics = [k for k in SUMMARY_METRICS if k in summary]
+    rank_by = metrics[0]
+    worst = sorted(rows, key=lambda r: r.get(rank_by, math.inf))[:10]
     md = [
         f"# Scoring report: {meta['tracker']} on {meta['dataset']}",
         "",
@@ -97,7 +123,7 @@ def write_report(
         "",
         "| Metric | Mean over clips |",
         "|---|---|",
-        *[f"| {k} | {summary[k]:.4f} |" for k in SUMMARY_METRICS],
+        *[f"| {k} | {summary[k]:.4f} |" for k in metrics],
     ]
     if comparison is not None:
         md += [
@@ -110,14 +136,13 @@ def write_report(
         ]
     md += [
         "",
-        "## Worst 10 clips by raw pitch accuracy",
+        f"## Worst 10 clips by {rank_by}",
         "",
-        "| Clip | RPA | Voicing recall | False alarm | Median cents |",
-        "|---|---|---|---|---|",
+        "| Clip | " + " | ".join(metrics) + " |",
+        "|---|" + "---|" * len(metrics),
     ]
     md += [
-        f"| {r['clip_id']} | {r['raw_pitch_accuracy']:.3f} | {r['voicing_recall']:.3f} | "
-        f"{r['voicing_false_alarm']:.3f} | {r['cents_error_median']:.1f} |"
+        f"| {r['clip_id']} | " + " | ".join(f"{r.get(k, math.nan):.3f}" for k in metrics) + " |"
         for r in worst
     ]
     md_path.write_text("\n".join(md) + "\n", encoding="utf-8")
@@ -128,6 +153,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Score a pitch tracker on a dataset.")
     p.add_argument("--dataset", choices=sorted(DATASETS), default="mir1k")
     p.add_argument("--tracker", choices=sorted(TRACKERS), default="pyin")
+    p.add_argument("--segmenter", choices=sorted(SEGMENTERS), default="guess")
     p.add_argument("--clip", action="append", help="score only these clip IDs (repeatable)")
     p.add_argument("--limit", type=int, help="score only the first N clips")
     p.add_argument("--jobs", type=int, default=os.cpu_count() or 1)
@@ -148,7 +174,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"No clips found for {args.dataset}; download it first (see data/README.md).")
         return 2
 
-    jobs = [Job(args.dataset, args.tracker, cid) for cid in ids]
+    jobs = [Job(args.dataset, args.tracker, args.segmenter, cid) for cid in ids]
     start = time.time()
     if args.jobs > 1 and len(jobs) > 1:
         with ProcessPoolExecutor(max_workers=args.jobs) as pool:
@@ -161,6 +187,7 @@ def main(argv: list[str] | None = None) -> int:
     meta = {
         "dataset": args.dataset,
         "tracker": args.tracker,
+        "segmenter": args.segmenter,
         "date": time.strftime("%Y-%m-%d %H:%M"),
         "seconds": seconds,
     }
@@ -175,8 +202,15 @@ def main(argv: list[str] | None = None) -> int:
     md_path, json_path = write_report(args.out, name, meta, summary, rows, comparison)
 
     print(f"{args.tracker} on {args.dataset}: {len(rows)} clips in {seconds:.0f} s")
-    for k in SUMMARY_METRICS:
+    for k in (k for k in SUMMARY_METRICS if k in summary):
         print(f"  {k:22s} {summary[k]:.4f}")
+    target = getattr(DATASETS[args.dataset], "HUMAN_AGREEMENT_F1", None)
+    if target is not None and "note_f1_mean" in summary:
+        verdict = "meets" if summary["note_f1_mean"] >= target else "below"
+        print(
+            f"  Phase 1 note gate: {summary['note_f1_mean']:.3f} {verdict} "
+            f"human agreement {target:.3f}"
+        )
     if comparison:
         print("Against baseline:\n" + "\n".join(comparison))
     print(f"Report: {md_path}\n        {json_path}")
