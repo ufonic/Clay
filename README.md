@@ -10,4 +10,16 @@ Personal use only.
 
 ## Status
 
-Phase 0 · Foundation. Build instructions will appear here once the CMake skeleton lands (task 0.3).
+Phase 0 · Foundation.
+
+## Build (Windows)
+
+```
+git clone --recurse-submodules https://github.com/ufonic/Clay.git
+cd Clay
+tools\msvc.cmd cmake --preset windows-debug
+tools\msvc.cmd cmake --build --preset windows-debug
+tools\msvc.cmd ctest --preset windows-debug
+```
+
+Needs Visual Studio 2022+ Build Tools (C++ workload), CMake ≥ 3.25, and Ninja. macOS builds run in CI.
