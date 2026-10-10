@@ -52,7 +52,7 @@ Audio input ──> Analysis ──> Note model ──> Resynthesis ──> Audi
 ```
 /research     Python 3.12 prototypes, pytest, scoring harness, dataset loaders
 /engine       C++20 DSP engine, Catch2 tests, parity tests against /research
-/plugin       JUCE 8 plugin + standalone (VST3, AU, CLAP); ARA in Phase 4
+/plugin       JUCE 9 plugin + standalone (VST3, AU, CLAP); ARA in Phase 4
 /m4l          Max for Live bridge device (JavaScript in Max + OSC)
 /third_party  Pinned submodules: JUCE, ARA SDK, clap-juce-extensions, etc.
 /data         Dataset download scripts (never commit audio datasets)
@@ -73,7 +73,7 @@ Audio input ──> Analysis ──> Note model ──> Resynthesis ──> Audi
 | Dataset loaders | mirdata (download + load MIR-1K-style sets, GiantSteps, Ballroom, Groove); custom loaders where mirdata has none |
 | Production | C++20, CMake ≥ 3.25 with `CMakePresets.json`, Ninja |
 | Compilers | Windows: MSVC (Visual Studio 2022 or newer). macOS: Apple Clang (Xcode), universal binary |
-| Plugin framework | JUCE 8 (GPL is acceptable for personal use) |
+| Plugin framework | JUCE 9 (AGPLv3; fine for personal, non-distributed use. A commercial JUCE licence would be needed only if Clay were ever distributed closed-source) |
 | CLAP | clap-juce-extensions |
 | ARA | Celemony ARA SDK 2 through JUCE's built-in ARA support (`juce_audio_plugin_client` ARA wrapper). Use the SDK and JUCE ARA examples as reference; do not hand-wire the raw SDK |
 | Neural inference in C++ | ONNX Runtime |
@@ -81,7 +81,7 @@ Audio input ──> Analysis ──> Note model ──> Resynthesis ──> Audi
 | Polyphonic note detection baseline | Spotify Basic Pitch |
 | FFT/DSP | PFFFT or KFR, Eigen |
 | Live bridge | Max for Live device + OSC/IPC |
-| Testing | Catch2, pluginval, parity tests, render-diff tests |
+| Testing | Catch2 v3 (submodule), pluginval, parity tests, render-diff tests |
 | Formatting/lint | clang-format (repo `.clang-format`), ruff (format + lint) |
 | CI | GitHub Actions on macOS and Windows |
 
@@ -174,7 +174,7 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 **Current phase: 0 · Foundation** (update this section as phases complete; full plan in `docs/ROADMAP.md`)
 
 - [ ] 0.1 `git init`, GitHub repo, `.gitignore`, `.clang-format`, ruff config, `docs/decisions.md`
-- [ ] 0.2 Pin JUCE 8, ARA SDK, clap-juce-extensions as submodules in `/third_party`
+- [x] 0.2 Pin JUCE 9, ARA SDK, clap-juce-extensions, Catch2 as submodules in `/third_party`
 - [ ] 0.3 CMake skeleton + `CMakePresets.json`; GitHub Actions building on macOS and Windows
 - [ ] 0.4 `/research` uv project; dataset download scripts and a loader returning audio + labels
 - [ ] 0.5 Scoring harness: note F1, raw pitch accuracy, cents error; one-command report
