@@ -12,6 +12,12 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-10 · JUCE 9 instead of JUCE 8
+- **Decision:** pin JUCE 9.0.3 (the plan said JUCE 8). Pin clap-juce-extensions to `main` commit `7adee3a`, which has JUCE 9 support.
+- **Alternatives:** JUCE 8.0.15 (last JUCE 8 release).
+- **Why:** JUCE 9 is current and will keep getting fixes; starting on it avoids a migration later. Its breaking changes (SVG/Drawable rework, Windows multi-touch off by default) don't affect code we haven't written yet. Runtime minimum is still macOS 10.11, so the 2017 MacBook Pro is fine. JUCE 9.0.3 has no native CLAP, so clap-juce-extensions is still needed.
+- **Revisit if:** clap-juce-extensions breaks on JUCE 9, or the owner prefers the plan's JUCE 8 (switching back is a one-line submodule change now, harder after Phase 3).
+
 ## 2026-10-10 · Mac testing on the owner's 2017 Intel MacBook Pro
 - **Decision:** macOS is verified by CI plus four batched "Mac checkpoints" (end of Phases 0, 3, 4, 7) on a 2017 Intel MacBook Pro. Deployment target macOS 13.0; Logic Pro 10.8.x; native ARA on Intel.
 - **Alternatives:** buy/borrow an Apple Silicon Mac; CI-only macOS.

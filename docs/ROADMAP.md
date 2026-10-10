@@ -116,7 +116,7 @@ Goal: everything needed to measure, build, and load a plugin, before any real DS
 | # | Task | Verified by |
 |---|---|---|
 | 0.1 | `git init`, GitHub repo, `.gitignore`, `.clang-format`, ruff config, `docs/decisions.md` | CI lint job |
-| 0.2 | Pin JUCE 8, ARA SDK, clap-juce-extensions as submodules | CI checkout + build |
+| 0.2 | Pin JUCE 9, ARA SDK, clap-juce-extensions, Catch2 as submodules | CI checkout + build |
 | 0.3 | CMake skeleton + presets; GitHub Actions on macOS (universal) and Windows | green CI |
 | 0.4 | `/research` uv project; download scripts + loaders for MIR-1K, VocalSet (GuitarSet, MAESTRO later) | pytest on loaders (small fixture clips) |
 | 0.5 | Scoring harness: all metrics above, one command, Markdown + JSON report | pytest with known-answer fixtures |
