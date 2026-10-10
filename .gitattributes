@@ -1,0 +1,19 @@
+# Normalize line endings in the repo; check out with LF everywhere so
+# macOS CI and Windows produce identical files.
+* text=auto eol=lf
+
+# Windows-only scripts need CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.wav binary
+*.aif binary
+*.aiff binary
+*.flac binary
+*.mp3 binary
+*.png binary
+*.jpg binary
+*.onnx binary
+*.amxd binary

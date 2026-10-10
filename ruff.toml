@@ -1,0 +1,18 @@
+# Python lint + format for /research and /data scripts.
+target-version = "py312"
+line-length = 100
+extend-exclude = ["third_party"]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # import sorting
+    "B",   # bugbear: likely bugs
+    "UP",  # modern Python syntax
+    "NPY", # NumPy-specific checks
+]
+
+[format]
+quote-style = "double"
