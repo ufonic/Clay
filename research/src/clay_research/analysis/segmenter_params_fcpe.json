@@ -1,0 +1,25 @@
+{
+ "tracker": "fcpe",
+ "trials": 160,
+ "date": "2026-10-10 17:58",
+ "default_params_score_all": 0.7069683138269245,
+ "cross_validated_score": 0.7071886658350346,
+ "in_sample_score": 0.725693673569664,
+ "human_agreement": 0.74,
+ "params": {
+  "midi_low": 36,
+  "midi_high": 84,
+  "sustain_sigma": 0.6142154910567079,
+  "attack_sigma": 1.8319133475712643,
+  "unvoiced_in_note": 0.0430939889550054,
+  "voiced_in_silence": 0.03611393884695984,
+  "p_stay_sustain": 0.95,
+  "p_stay_attack": 0.6954650346693613,
+  "p_note_change": 0.01388140489602662,
+  "p_reattack": 0.001752502868108355,
+  "p_start": 0.045279954706785384,
+  "onset_weight": 4.603439708197739,
+  "min_note_s": 0.09009838338716544,
+  "trim_fraction": 0.0754556717661388
+ }
+}
