@@ -131,6 +131,8 @@ Audio input ──> Analysis ──> Note model ──> Resynthesis ──> Audi
 tools\msvc.cmd cmake --preset windows-debug -DCLAY_WARNINGS_AS_ERRORS=ON
 tools\msvc.cmd cmake --build --preset windows-debug
 tools\msvc.cmd ctest --preset windows-debug        # Catch2 tests
+# Plugin artefacts (VST3, CLAP, Standalone): build/<preset>/plugin/Clay_artefacts/<Debug|Release>/
+# Validators run in CI (pluginval 1.0.4 strictness 5, auval, clap-validator 0.4.1); see .github/workflows/ci.yml
 "C:\Program Files\LLVM\bin\clang-format.exe" --dry-run --Werror <files>
 ```
 
@@ -149,7 +151,6 @@ uv run --project research python -m clay_research.harness.score --dataset mir1k 
 
 ```sh
 uv run --project research python tools/rt_lint.py engine plugin   # real-time safety lint
-pluginval --strictness-level 5 --validate <path-to-VST3>
 ```
 
 ---

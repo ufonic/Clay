@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(CLAY_BUILD_TESTS "Build unit tests" ON)
+option(CLAY_BUILD_PLUGIN "Build the JUCE plugin and standalone app" ON)
 option(CLAY_WARNINGS_AS_ERRORS "Treat compiler warnings as errors (on in CI)" OFF)
 
 # Warning flags for Clay's own targets only (never third-party code).
@@ -37,3 +38,9 @@ if(CLAY_BUILD_TESTS)
 endif()
 
 add_subdirectory(engine)
+
+if(CLAY_BUILD_PLUGIN)
+    add_subdirectory(third_party/JUCE EXCLUDE_FROM_ALL)
+    add_subdirectory(third_party/clap-juce-extensions EXCLUDE_FROM_ALL)
+    add_subdirectory(plugin)
+endif()
