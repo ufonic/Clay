@@ -1,0 +1,38 @@
+# Build output
+/build/
+/out/
+/cmake-build-*/
+CMakeUserPresets.json
+
+# Audio and datasets (never commit audio; see /data download scripts)
+/renders/
+/data/*/
+!/data/scripts/
+*.wav
+*.aif
+*.aiff
+*.flac
+*.mp3
+*.ogg
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Analysis caches
+*.claycache
+
+# IDEs and OS
+.vs/
+.vscode/
+.idea/
+*.user
+.DS_Store
+Thumbs.db
+
+# Claude Code local settings
+.claude/settings.local.json
