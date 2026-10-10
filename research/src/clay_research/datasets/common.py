@@ -30,6 +30,15 @@ class PitchTrack:
 
 
 @dataclass(frozen=True)
+class Note:
+    """One labelled note: onset/offset in seconds, pitch as a (fractional) MIDI number."""
+
+    onset: float
+    offset: float
+    midi: float
+
+
+@dataclass(frozen=True)
 class Clip:
     """One audio clip plus whatever labels its dataset provides."""
 
@@ -38,6 +47,7 @@ class Clip:
     audio: np.ndarray  # float32, shape (samples,) mono or (samples, channels)
     sample_rate: int
     pitch: PitchTrack | None = None
+    notes: tuple[Note, ...] | None = None
     metadata: dict[str, str] = field(default_factory=dict)
 
     @property
