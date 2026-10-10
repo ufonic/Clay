@@ -1,6 +1,7 @@
 configure_file(src/BuildInfo.h.in "${CMAKE_CURRENT_BINARY_DIR}/generated/clay/engine/BuildInfo.h" @ONLY)
 
 add_library(clay_engine STATIC
+    src/TransferBuffer.cpp
     src/Version.cpp
 )
 add_library(clay::engine ALIAS clay_engine)
@@ -14,6 +15,7 @@ clay_set_warnings(clay_engine)
 
 if(CLAY_BUILD_TESTS)
     add_executable(clay_engine_tests
+        tests/TransferBufferTests.cpp
         tests/VersionTests.cpp
     )
     target_link_libraries(clay_engine_tests PRIVATE clay::engine Catch2::Catch2WithMain)
