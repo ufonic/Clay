@@ -186,7 +186,7 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 - [x] 0.5 Scoring harness: note F1, raw pitch accuracy, cents error; one-command report
 - [ ] 0.6 Labeling script so the owner can label notes in 5 takes (tool done: `docs/labeling-guide.md`) · 🖐 owner labels the takes
 - [ ] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + pluginval in CI · 🖐 owner loads it in Live, FL Studio, Bitwig on Windows; Mac hosts wait for 🍎 Mac checkpoint A
-- [ ] 0.8 Transfer spike: record a Live clip into a buffer and play it back in sync (playhead, tempo, warping) · 🖐 owner verifies in Live
+- [ ] 0.8 Transfer spike: record a Live clip into a buffer and play it back in sync (playhead, tempo, warping) (code done: Transfer + null test in the plugin; steps in `docs/host-check-windows.md`) · 🖐 owner verifies in Live
 - [x] 0.9 Real-time safety lint script and audio-thread stress test
 - [ ] 0.10 Editor UI mockups (blob view, toolbar, inspector, multitrack) · 🖐 owner approves
 - [ ] 0.11 `SPEC.md` for the analysis module · owner confirms

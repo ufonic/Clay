@@ -50,7 +50,8 @@ if(CLAY_BUILD_TESTS)
     # Links against the plugin's shared code (the `Clay` target), not a plugin format.
     add_executable(clay_plugin_tests
         tests/AllocationCounter.cpp
-        tests/RealtimeStressTests.cpp)
+        tests/RealtimeStressTests.cpp
+        tests/TransferTests.cpp)
     target_link_libraries(clay_plugin_tests PRIVATE Clay Catch2::Catch2WithMain)
     # JUCE keeps its include paths and module definitions private to `Clay`; reuse them so
     # the tests see the plugin's headers exactly as the plugin was compiled.
