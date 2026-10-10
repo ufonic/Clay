@@ -49,3 +49,24 @@ def test_install_rejects_bad_checksum(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="MD5 mismatch"):
         download.install(source, tmp_path)
     assert not (tmp_path / "fake" / ".complete").exists()
+
+
+def test_repair_wrapped_offsets_finds_misplaced_members(tmp_path):
+    """Simulate a >4 GB macOS zip: shift member offsets by 4 GB, then repair them."""
+    archive = tmp_path / "big.zip"
+    with zipfile.ZipFile(archive, "w") as z:
+        for i in range(5):
+            z.writestr(f"data_by_singer/f{i}/take.wav", f"audio {i}".encode())
+    with zipfile.ZipFile(archive) as z:
+        for info in z.infolist()[2:]:
+            info.header_offset += 1 << 32  # what wrapped positions look like to zipfile
+        assert download.repair_wrapped_offsets(z) == 3
+        assert z.read("data_by_singer/f4/take.wav") == b"audio 4"
+
+
+def test_repair_leaves_normal_zips_alone(tmp_path):
+    archive = tmp_path / "ok.zip"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("a.txt", b"a")
+    with zipfile.ZipFile(archive) as z:
+        assert download.repair_wrapped_offsets(z) == 0
