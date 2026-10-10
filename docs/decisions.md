@@ -12,6 +12,12 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-10 · Editor mockups and analysis spec approved
+- **Decision:** owner approved the editor mockups (https://claude.ai/artifact/77BtemqUgsYvpv3hHK1REY: editor, note assignment mode, multitrack) and the analysis SPEC with all four proposed defaults: 5 ms frames, stereo as mid, C2–C6 default range, center pitch = amplitude-weighted median of the stable middle.
+- **Alternatives:** 10 ms frames; per-side stereo analysis; narrower or auto-detected range; whole-note average or settle-point center pitch.
+- **Why:** see `docs/analysis/SPEC.md` § 9. The mockups are the reference for Phase 3 UI work; layout or interaction choices they don't cover still go to the owner.
+- **Revisit if:** Phase 1 listening shows the center-pitch rule pulls notes the wrong way, or 5 ms analysis is too slow in C++.
+
 ## 2026-10-10 · JUCE 9 instead of JUCE 8
 - **Decision:** pin JUCE 9.0.3 (the plan said JUCE 8). Pin clap-juce-extensions to `main` commit `7adee3a`, which has JUCE 9 support.
 - **Alternatives:** JUCE 8.0.15 (last JUCE 8 release).

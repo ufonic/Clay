@@ -1,6 +1,6 @@
 # Analysis module: SPEC
 
-**Status:** draft for owner review (task 0.11) · **Phases:** prototype in Phase 1 (Python), port in Phase 2 (C++)
+**Status:** approved by the owner 2026-10-10 (task 0.11) · **Phases:** prototype in Phase 1 (Python), port in Phase 2 (C++)
 
 ## 1. What it does
 
@@ -83,11 +83,9 @@ Plus `analysis_version`, `sample_rate`, `duration`, and the settings used.
 Python (Phase 1): `clay_research.analysis.analyze(audio, sample_rate, settings) -> AnalysisResult`.
 C++ (Phase 2): `clay::analysis::analyze(const AudioView&, const Settings&) -> AnalysisResult`, same fields, with parity tests against Python (tolerances in the roadmap's "Metric definitions").
 
-## 9. Decisions for the owner
+## 9. Owner decisions (2026-10-10)
 
-1. **Frame rate: 5 ms** (proposed) vs 10 ms. 5 ms gives smoother pitch curves and finer drift edits for about twice the analysis time. Analysis is offline, so the cost is small.
-2. **Stereo as mid (L+R)/2** (proposed). The alternative, analysing each side separately, only matters for stereo-recorded vocals, which are rare.
-3. **Default pitch range C2–C6** (proposed). Covers bass to soprano; you can narrow it per clip to avoid octave errors.
-4. **"Center pitch" = amplitude-weighted median of the stable middle** (proposed). This is what you'll see as the blob's pitch and what correction pulls toward.
-
-Reply with "spec approved" (or changes), and Claude will tick task 0.11.
+1. **Frame rate: 5 ms.** Smoother pitch curves and finer drift/vibrato edits; analysis is offline, so the extra time is acceptable.
+2. **Stereo is analysed as mid (L+R)/2.** One set of notes for both channels.
+3. **Default pitch range C2–C6** (65–1047 Hz), adjustable per clip; octave errors are fixed in note assignment mode.
+4. **Center pitch = amplitude-weighted median of the note's stable middle** (transitions at each end excluded).
