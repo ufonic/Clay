@@ -16,3 +16,6 @@ select = [
 
 [format]
 quote-style = "double"
+
+[lint.isort]
+known-first-party = ["clay_research"]
