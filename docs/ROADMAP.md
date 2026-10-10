@@ -23,7 +23,7 @@ Before each checkpoint Claude writes `docs/mac-checkpoint-<X>.md`: download link
 - **macOS ceiling is 13 Ventura.** Set `CMAKE_OSX_DEPLOYMENT_TARGET` to `13.0` (lower it if `sw_vers` on the Mac shows 12). Before adding any dependency, check that its minimum macOS is ≤ 13 (watch ONNX Runtime and PyTorch-exported models in Phase 2+).
 - **Logic Pro 10.8.x is the newest that runs on Ventura** (Logic 11 needs macOS 14.4). ARA and plugin testing target 10.8. Check that Live 12, FL Studio, and Bitwig versions in use still support Ventura at each checkpoint.
 - **ARA runs natively on Intel**, so checkpoint C tests native ARA. The Apple Silicon + Rosetta ARA path stays untested — a known gap, accepted for personal use until an Apple Silicon Mac is available.
-- **The Intel slice of the universal binary has no Intel CI runner** (GitHub's macOS runners are Apple Silicon). In CI, try running the x86_64 test binary with `arch -x86_64` under Rosetta; if that isn't available on the runner, the Intel slice is first exercised at the Mac checkpoints, so expect Intel-only bugs to surface there.
+- **The Intel slice of the universal binary is tested in CI under Rosetta** (GitHub's macOS runners are Apple Silicon; verified working 2026-10-10). Intel-only bugs should show up in CI, not at the Mac checkpoints.
 - **Performance gates are measured on the Windows PC.** On the Mac, "smooth enough to use" is the bar.
 
 ---

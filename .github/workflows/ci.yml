@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.2.0
       - name: clang-format (engine, plugin)
         run: |
           files=$(git ls-files 'engine/*.h' 'engine/*.cpp' 'plugin/*.h' 'plugin/*.cpp')
@@ -68,9 +68,7 @@ jobs:
           echo "$archs" | grep -qw arm64 && echo "$archs" | grep -qw x86_64
       - name: Test (arm64)
         run: ctest --preset macos-release
-      # The owner's Mac is Intel, but GitHub's macOS runners are Apple Silicon.
-      # Try the Intel slice under Rosetta; if the runner has no Rosetta this step
-      # fails without failing the build (see docs/ROADMAP.md "Mac checkpoints").
+      # The owner's Mac is Intel, but GitHub's macOS runners are Apple Silicon,
+      # so run the Intel slice under Rosetta.
       - name: Test (x86_64 under Rosetta)
-        continue-on-error: true
         run: arch -x86_64 build/macos-release/engine/clay_engine_tests
