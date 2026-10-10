@@ -144,6 +144,7 @@ uv run --project research pytest research tools              # unit tests (real-
 python tools/rt_lint.py engine plugin                        # real-time safety lint (see the file's docstring for markers)
 uv run --project research ruff check . ; uv run --project research ruff format --check .
 uv run --project research python -m clay_research.datasets.download mir1k vocalset   # see data/README.md
+uv run --project research python -m clay_research.labeling.server   # note labeler for the owner's takes (docs/labeling-guide.md)
 uv run --project research python -m clay_research.harness.score --dataset mir1k --baseline research/baselines/mir1k_pyin.json
     # scoring report -> renders/reports/; add --clip <ID> to score one clip; exits 1 if worse than baseline
 ```
@@ -183,7 +184,7 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 - [x] 0.3 CMake skeleton + `CMakePresets.json`; GitHub Actions building on macOS and Windows
 - [x] 0.4 `/research` uv project; dataset download scripts and a loader returning audio + labels
 - [x] 0.5 Scoring harness: note F1, raw pitch accuracy, cents error; one-command report
-- [ ] 0.6 Labeling script so the owner can label notes in 5 takes · 🖐 owner labels the takes
+- [ ] 0.6 Labeling script so the owner can label notes in 5 takes (tool done: `docs/labeling-guide.md`) · 🖐 owner labels the takes
 - [ ] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + pluginval in CI · 🖐 owner loads it in Live, FL Studio, Bitwig on Windows; Mac hosts wait for 🍎 Mac checkpoint A
 - [ ] 0.8 Transfer spike: record a Live clip into a buffer and play it back in sync (playhead, tempo, warping) · 🖐 owner verifies in Live
 - [x] 0.9 Real-time safety lint script and audio-thread stress test
