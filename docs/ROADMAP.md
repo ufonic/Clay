@@ -12,9 +12,9 @@ The owner has an old Mac and would rather not use it. Everything that can run he
 
 | Checkpoint | When | What the owner does | Est. time |
 |---|---|---|---|
-| **A** | Phase 0 gate | Load pass-through VST3/AU/CLAP in Logic, Live, FL Studio, Bitwig; standalone opens | ~1 hour |
+| **A** | Phase 0 gate | Load pass-through AU in Logic and VST3 in Live; standalone opens | ~30 min |
 | **B** | Phase 3 gate | Tune a lead vocal in Live and Logic; save, reopen, confirm recall | ~1–2 hours |
-| **C** | Phase 4 gate | ARA in Logic; Max for Live auto-capture; FL/Bitwig recall | ~2 hours |
+| **C** | Phase 4 gate | ARA in Logic; Max for Live auto-capture; FL Studio + Bitwig load and recall | ~2 hours |
 | **D** | Phase 7 gate | 16-track session opens and plays; batch export runs | ~1 hour |
 
 Before each checkpoint Claude writes `docs/mac-checkpoint-<X>.md`: download links, install steps, and a tick-box list, so a session is follow-the-list.
@@ -121,13 +121,13 @@ Goal: everything needed to measure, build, and load a plugin, before any real DS
 | 0.4 | `/research` uv project; download scripts + loaders for MIR-1K, VocalSet (GuitarSet, MAESTRO later) | pytest on loaders (small fixture clips) |
 | 0.5 | Scoring harness: all metrics above, one command, Markdown + JSON report | pytest with known-answer fixtures |
 | 0.6 | Labeling script (load take, show pYIN guess, owner corrects notes, save labels) | 🖐 owner labels 5 takes |
-| 0.7 | Pass-through plugin (VST3, AU, CLAP, standalone), latency = 0, pluginval in CI | pluginval ≥ 5; 🖐 loads in 4 hosts × 2 OSes |
+| 0.7 | Pass-through plugin (VST3, AU, CLAP, standalone), latency = 0, pluginval in CI | pluginval ≥ 5 + clap-validator + auval in CI; 🖐 Live (Windows), 🍎 Logic + Live (Mac). FL Studio + Bitwig hands-on moved to the Phase 4 gate |
 | 0.8 | Transfer spike in Live: capture clip to buffer, play back in sync incl. tempo change and warped clip | 🖐 owner, in Live |
 | 0.9 | Real-time lint (flags allocation, locks, I/O, logging in audio callbacks) + stress test | lint catches seeded violations |
 | 0.10 | UI mockups: blob view, toolbar, inspector, note assignment mode, multitrack | 🖐 owner approves |
 | 0.11 | `docs/analysis/SPEC.md` | owner confirms |
 
-**Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in Live, FL Studio, and Bitwig on Windows and in all four hosts at 🍎 Mac checkpoint A; the owner approves the mockups.
+**Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in Live on Windows and in Logic + Live at 🍎 Mac checkpoint A (FL Studio and Bitwig: automated validators now, hands-on at the Phase 4 gate); the owner approves the mockups.
 
 ---
 
@@ -204,7 +204,7 @@ Goal: the first usable tool. Features 3–9, 35, 36.
 | 4.8 | ARA 2 via JUCE ARA in Logic 10.8, native on the Intel Mac (19) | 🔬 🍎 Logic (checkpoint C) |
 | 4.9 | Max for Live device: auto-send clips over OSC, sync Live 12 global key/scale (20, 38) | 🖐 Live |
 
-**Gate:** 👂 ±3 semitone formant shifts sound natural; 🍎 ARA works in Logic 10.8 on the Intel Mac (checkpoint C); 🖐 a Live clip tunes without pressing Transfer; 🖐 plugin loads and recalls state in FL Studio and Bitwig.
+**Gate:** 👂 ±3 semitone formant shifts sound natural; 🍎 ARA works in Logic 10.8 on the Intel Mac (checkpoint C); 🖐 a Live clip tunes without pressing Transfer; 🖐 plugin loads, passes audio, and recalls state in FL Studio and Bitwig (VST3 and CLAP, Windows; deferred here from Phase 0).
 
 ---
 

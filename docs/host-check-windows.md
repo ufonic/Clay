@@ -35,13 +35,13 @@ Tick each box. If something fails, note what you saw (error text or screenshot) 
 - [ ] Repeat the null test after changing the set's tempo (e.g. 92 → 110 BPM) with the clip **warped**: capture again first (Transfer → play → Stop transfer), then Play captured + Null test. Same result expected.
 - [ ] Loop a 2-bar region and leave it looping for a few passes with Null test on: it stays silent.
 
-**FL Studio** (VST3 and CLAP)
+**FL Studio** (VST3 and CLAP) · *deferred to the Phase 4 gate*
 - [ ] Options → Manage plugins → Find installed plugins
 - [ ] Add Clay (VST3) to a mixer insert with audio playing: sound unchanged, window opens
 - [ ] Repeat with Clay (CLAP)
 - [ ] Save, close, reopen the project: Clay is still there
 
-**Bitwig** (VST3 and CLAP)
+**Bitwig** (VST3 and CLAP) · *deferred to the Phase 4 gate*
 - [ ] Settings → Locations: VST3 and CLAP folders listed; let it rescan
 - [ ] Add Clay (CLAP) to an audio track: sound unchanged, window opens
 - [ ] Repeat with Clay (VST3)
