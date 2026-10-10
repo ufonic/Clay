@@ -90,7 +90,7 @@ Audio input ──> Analysis ──> Note model ──> Resynthesis ──> Audi
 ## 5. Non-negotiable rules
 
 1. **Every change ships with a test.** Run the scoring harness before you say a task is done. *Bootstrap exception:* until the scoring harness exists (Phase 0), skip the harness step; tasks with no code to unit-test (CI config, submodules) are verified by a green CI run instead.
-2. **Audio thread rules:** no memory allocation, no locks or mutexes, no file or network I/O, no logging, no unbounded loops. Use lock-free FIFOs for thread communication. The real-time lint script and stress test must pass.
+2. **Audio thread rules:** no memory allocation, no locks or mutexes, no file or network I/O, no logging, no unbounded loops. Use lock-free FIFOs for thread communication. Wrap every audio-thread function in `// clay:realtime-begin` / `// clay:realtime-end`; `tools/rt_lint.py` checks those regions, and the allocation-counting stress test (`plugin/tests/RealtimeStressTests.cpp`) must pass. Add a stress test for every new audio-thread component.
 3. **Never guess an API.** Use only functions present in the pinned SDK headers in `/third_party`. If you are unsure, read the header or the SDK example first.
 4. **Prefer existing libraries** over writing new DSP. Write new DSP only when no suitable library exists, and say so.
 5. **Python first, then C++** for every DSP or analysis algorithm. Prove it in `/research` first. Port it to `/engine` only after the owner approves it by ear, and add a parity test that meets the tolerances in `docs/ROADMAP.md` § "Metric definitions". Plumbing, UI, and plugin-shell code go straight to C++.
@@ -140,18 +140,14 @@ tools\msvc.cmd ctest --preset windows-debug        # Catch2 tests
 
 ```sh
 uv sync --project research                                   # install/refresh env
-uv run --project research pytest research                    # unit tests (real-data tests skip if not downloaded)
+uv run --project research pytest research tools              # unit tests (real-data tests skip if not downloaded)
+python tools/rt_lint.py engine plugin                        # real-time safety lint (see the file's docstring for markers)
 uv run --project research ruff check . ; uv run --project research ruff format --check .
 uv run --project research python -m clay_research.datasets.download mir1k vocalset   # see data/README.md
 uv run --project research python -m clay_research.harness.score --dataset mir1k --baseline research/baselines/mir1k_pyin.json
     # scoring report -> renders/reports/; add --clip <ID> to score one clip; exits 1 if worse than baseline
 ```
 
-> **Planned** (Phase 0 creates these; replace with the real ones as they work):
-
-```sh
-uv run --project research python tools/rt_lint.py engine plugin   # real-time safety lint
-```
 
 ---
 
@@ -190,7 +186,7 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 - [ ] 0.6 Labeling script so the owner can label notes in 5 takes · 🖐 owner labels the takes
 - [ ] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + pluginval in CI · 🖐 owner loads it in Live, FL Studio, Bitwig on Windows; Mac hosts wait for 🍎 Mac checkpoint A
 - [ ] 0.8 Transfer spike: record a Live clip into a buffer and play it back in sync (playhead, tempo, warping) · 🖐 owner verifies in Live
-- [ ] 0.9 Real-time safety lint script and audio-thread stress test
+- [x] 0.9 Real-time safety lint script and audio-thread stress test
 - [ ] 0.10 Editor UI mockups (blob view, toolbar, inspector, multitrack) · 🖐 owner approves
 - [ ] 0.11 `SPEC.md` for the analysis module · owner confirms
 - [ ] 0.12 Replace § 7 planned commands with the real ones

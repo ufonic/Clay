@@ -45,3 +45,16 @@ target_link_libraries(Clay
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags)
+
+if(CLAY_BUILD_TESTS)
+    # Links against the plugin's shared code (the `Clay` target), not a plugin format.
+    add_executable(clay_plugin_tests
+        tests/AllocationCounter.cpp
+        tests/RealtimeStressTests.cpp)
+    target_link_libraries(clay_plugin_tests PRIVATE Clay Catch2::Catch2WithMain)
+    # JUCE keeps its include paths and module definitions private to `Clay`; reuse them so
+    # the tests see the plugin's headers exactly as the plugin was compiled.
+    target_include_directories(clay_plugin_tests PRIVATE $<TARGET_PROPERTY:Clay,INCLUDE_DIRECTORIES>)
+    target_compile_definitions(clay_plugin_tests PRIVATE $<TARGET_PROPERTY:Clay,COMPILE_DEFINITIONS>)
+    catch_discover_tests(clay_plugin_tests DISCOVERY_MODE PRE_TEST)
+endif()
