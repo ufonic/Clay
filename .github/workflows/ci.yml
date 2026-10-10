@@ -129,6 +129,7 @@ jobs:
       - name: Validate CLAP (clap-validator)
         run: |
           curl -sSL -o cv.zip "$CLAP_VALIDATOR_URL/$CLAP_VALIDATOR_BUILD-macos-universal.zip" && unzip -q cv.zip -d cv
+          for t in cv/*.tar.gz; do tar -xzf "$t" -C cv; done  # the macOS zip wraps a tarball
           cvbin=$(find cv -type f -name clap-validator | head -1); chmod +x "$cvbin"
           "$cvbin" validate -x "$CLAP_VALIDATOR_EXCLUDE" build/macos-release/plugin/Clay_artefacts/Release/CLAP/Clay.clap
       # upload-artifact drops file permissions, which breaks .app/.vst3 bundles;
