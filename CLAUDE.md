@@ -134,8 +134,6 @@ tools\msvc.cmd ctest --preset windows-debug        # Catch2 tests
 "C:\Program Files\LLVM\bin\clang-format.exe" --dry-run --Werror <files>
 ```
 
-The local VS 2026 Build Tools install is flagged "incomplete" by the installer, so `tools\msvc.cmd` uses `vswhere -all`; the harmless "'vswhere.exe' is not recognized" line comes from that. A repair in Visual Studio Installer would remove it.
-
 > **Planned** (Phase 0 creates these; replace with the real ones as they work):
 
 ```sh
