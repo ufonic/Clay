@@ -46,6 +46,14 @@ SOURCES: dict[str, Source] = {
         license="CC BY 4.0 (Figshare mirror)",
         home="https://figshare.com/articles/dataset/MIR-1K_rar/5802891",
     ),
+    "vocadito": Source(
+        name="vocadito",
+        url="https://zenodo.org/record/5578807/files/vocadito.zip?download=1",
+        filename="Vocadito.zip",
+        md5="dea40fd18f14d899643c4ba221b33a46",
+        license="CC BY 4.0",
+        home="https://zenodo.org/records/5578807",
+    ),
     "vocalset": Source(
         name="vocalset",
         url="https://zenodo.org/api/records/1442513/files/VocalSet1-2.zip/content",

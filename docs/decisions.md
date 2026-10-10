@@ -12,6 +12,12 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-10 · Note gate on public data (vocadito); Mac checkpoint A moved before Phase 3
+- **Decision:** the Phase 1 note-detection gate uses vocadito (40 solo vocals, two annotators) instead of the owner's labeled takes. Target: mean note F1 vs each annotator ≥ 0.740, which is how well the two annotators agree with each other. Mac checkpoint A (Logic + Live load) moves from the Phase 0 gate to just before Phase 3.
+- **Alternatives:** owner labels 5 takes (original plan); targets of 0.70 or 0.80; combining checkpoint A with B.
+- **Why:** owner's request. Measured: two expert annotators agree at only 0.740 under the gate rules (1 of 40 tracks reaches 0.90), so the original 0.95 target was impossible against human labels; "as good as a second human" is a meaningful, reachable bar (baseline 0.556). Phases 1–2 have no Mac-specific risk, and CI validates AU/VST3/CLAP on macOS (incl. Intel) on every run.
+- **Revisit if:** Clay's notes score well but sound wrong to the owner (the annotators' conventions may differ from the owner's), or a macOS host bug appears that CI misses.
+
 ## 2026-10-10 · FL Studio and Bitwig hands-on checks moved to Phase 4
 - **Decision:** Phase 0 no longer needs the owner to test FL Studio or Bitwig. They're covered by CI validators (pluginval for VST3, clap-validator for CLAP) until the Phase 4 gate, which already requires load + state recall in both. Mac checkpoint A shrinks to Logic + Live.
 - **Alternatives:** test all four hosts now (original plan).
