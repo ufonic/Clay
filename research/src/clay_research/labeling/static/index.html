@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clay Note Labeler</title>
+<style>
+  :root {
+    --bg: #17181c; --panel: #212329; --line: #2e3038; --text: #e7e7ea; --muted: #9a9ba3;
+    --accent: #d9a066; --note: #6aa9ff; --note-sel: #ffd27a; --curve: #b9bcc6; --play: #ff6b6b;
+    --black-key: #1b1c21; --white-key: #24262d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { display: flex; flex-direction: column; }
+  header { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 14px;
+    background: var(--panel); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0 8px 0 0; color: var(--accent); }
+  select, button { font: inherit; color: var(--text); background: #2b2e36; border: 1px solid #3a3d47;
+    border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  button:hover, select:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #1a1a1a; border-color: var(--accent); font-weight: 600; }
+  button.on { border-color: var(--accent); color: var(--accent); }
+  .status { color: var(--muted); margin-left: auto; white-space: nowrap; }
+  .status b { color: var(--text); font-weight: 600; }
+  #help { padding: 6px 14px; color: var(--muted); font-size: 12.5px; border-bottom: 1px solid var(--line); }
+  #help kbd { background: #2b2e36; border: 1px solid #3a3d47; border-radius: 4px; padding: 0 5px;
+    font: 12px ui-monospace, monospace; color: var(--text); }
+  main { flex: 1; position: relative; min-height: 0; }
+  canvas { display: block; position: absolute; left: 0; width: 100%; }
+  #roll { top: 0; cursor: crosshair; }
+  #overview { bottom: 0; height: 56px; border-top: 1px solid var(--line); cursor: pointer; }
+  #message { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 16px; text-align: center; padding: 24px; pointer-events: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Clay · Note Labeler</h1>
+  <select id="take" aria-label="Take"></select>
+  <button id="play" title="Space">▶ Play</button>
+  <button id="guide" title="G: hear the labelled notes as tones">Guide tones</button>
+  <button id="undo" title="Ctrl+Z">Undo</button>
+  <button id="save" title="Ctrl+S">Save draft</button>
+  <button id="verify" class="primary" title="Save and mark this take as checked">Save &amp; mark verified</button>
+  <span class="status" id="status"></span>
+</header>
+<div id="help">
+  <kbd>Space</kbd> play/pause from cursor · click empty space to move cursor · drag a note up/down to change pitch
+  (hold <kbd>Alt</kbd> for fine) · drag a note's edge to move its start/end · <kbd>↑</kbd><kbd>↓</kbd> pitch ±1 ·
+  double-click to add · <kbd>S</kbd> split at cursor · <kbd>J</kbd> join with next · <kbd>Del</kbd> delete ·
+  wheel scrolls · <kbd>Ctrl</kbd>+wheel zooms · <kbd>Shift</kbd>+wheel scrolls pitch
+</div>
+<main id="main">
+  <canvas id="roll"></canvas>
+  <canvas id="overview"></canvas>
+  <div id="message">Loading…</div>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const KEY_W = 44, RULER_H = 22, EDGE_PX = 6, OVERVIEW_H = 56;
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const midiName = (m) => NOTE_NAMES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
+
+const state = {
+  take: null, duration: 0, pitch: { times: [], midi: [] }, notes: [], verified: false,
+  dirty: false, history: [], selected: -1,
+  t0: 0, pxPerSec: 120, midiTop: 84, pxPerSemi: 14, cursor: 0,
+  audioCtx: null, buffer: null, source: null, guideNodes: [], playing: false, playStartCtx: 0,
+  playStartT: 0, guide: false, drag: null,
+};
+
+const roll = $("roll"), overview = $("overview"), main = $("main");
+
+// ---------- geometry ----------
+const rollHeight = () => main.clientHeight - OVERVIEW_H;
+const xOf = (t) => KEY_W + (t - state.t0) * state.pxPerSec;
+const tOf = (x) => state.t0 + (x - KEY_W) / state.pxPerSec;
+const yOf = (m) => RULER_H + (state.midiTop - m) * state.pxPerSemi;
+const mOf = (y) => state.midiTop - (y - RULER_H) / state.pxPerSemi;
+const clampView = () => {
+  const visible = (roll.clientWidth - KEY_W) / state.pxPerSec;
+  state.t0 = Math.max(0, Math.min(state.t0, Math.max(0, state.duration - visible * 0.9)));
+};
+
+function fitPitchRange() {
+  const ms = state.pitch.midi.filter((m) => m !== null).concat(state.notes.map((n) => n.midi));
+  if (!ms.length) return;
+  const sorted = ms.slice().sort((a, b) => a - b);
+  const lo = sorted[Math.floor(sorted.length * 0.01)], hi = sorted[Math.floor(sorted.length * 0.99)];
+  const span = Math.max(12, hi - lo + 6);
+  state.pxPerSemi = Math.max(8, Math.min(28, (rollHeight() - RULER_H - 10) / span));
+  state.midiTop = Math.ceil(hi + 3);
+}
+
+// ---------- drawing ----------
+function setupCanvas(c, h) {
+  const dpr = window.devicePixelRatio || 1;
+  c.style.height = h + "px";
+  c.width = Math.round(c.clientWidth * dpr);
+  c.height = Math.round(h * dpr);
+  const g = c.getContext("2d");
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return g;
+}
+
+function draw() {
+  const h = rollHeight(), w = roll.clientWidth;
+  const g = setupCanvas(roll, h);
+  g.fillStyle = css("--bg"); g.fillRect(0, 0, w, h);
+
+  // pitch rows
+  const lowMidi = Math.floor(mOf(h)), highMidi = Math.ceil(state.midiTop);
+  for (let m = lowMidi; m <= highMidi; m++) {
+    const y = yOf(m + 0.5), black = [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
+    g.fillStyle = black ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.015)";
+    g.fillRect(KEY_W, y, w - KEY_W, state.pxPerSemi);
+    if (((m % 12) + 12) % 12 === 0) { g.fillStyle = css("--line"); g.fillRect(KEY_W, y + state.pxPerSemi - 1, w, 1); }
+  }
+
+  // time grid + ruler
+  const step = [0.1, 0.25, 0.5, 1, 2, 5, 10, 30].find((s) => s * state.pxPerSec >= 60) || 60;
+  g.font = "11px system-ui"; g.textBaseline = "middle";
+  for (let t = Math.floor(state.t0 / step) * step; xOf(t) < w; t += step) {
+    const x = xOf(t); if (x < KEY_W) continue;
+    g.fillStyle = css("--line"); g.fillRect(x, RULER_H, 1, h - RULER_H);
+    g.fillStyle = css("--muted"); g.fillText(t.toFixed(step < 1 ? 2 : 0) + "s", x + 3, RULER_H / 2);
+  }
+
+  // pitch curve
+  g.strokeStyle = css("--curve"); g.lineWidth = 1.5; g.globalAlpha = 0.85; g.beginPath();
+  let pen = false;
+  const { times, midi } = state.pitch;
+  for (let i = 0; i < times.length; i++) {
+    const x = xOf(times[i]);
+    if (x < KEY_W - 2 || x > w + 2 || midi[i] === null) { pen = false; continue; }
+    const y = yOf(midi[i]);
+    pen ? g.lineTo(x, y) : g.moveTo(x, y); pen = true;
+  }
+  g.stroke(); g.globalAlpha = 1;
+
+  // notes
+  state.notes.forEach((n, i) => {
+    const x0 = Math.max(KEY_W, xOf(n.onset)), x1 = xOf(n.offset);
+    if (x1 < KEY_W || x0 > w) return;
+    const y = yOf(n.midi + 0.5), sel = i === state.selected;
+    g.fillStyle = sel ? css("--note-sel") : css("--note");
+    g.globalAlpha = sel ? 0.55 : 0.38;
+    roundRect(g, x0, y + 1, Math.max(2, x1 - x0), state.pxPerSemi - 2, 4); g.fill();
+    g.globalAlpha = 1; g.strokeStyle = sel ? css("--note-sel") : css("--note"); g.lineWidth = sel ? 2 : 1;
+    roundRect(g, x0, y + 1, Math.max(2, x1 - x0), state.pxPerSemi - 2, 4); g.stroke();
+    if (x1 - x0 > 34 && state.pxPerSemi >= 11) {
+      g.fillStyle = css("--text"); g.fillText(midiName(n.midi), x0 + 4, y + state.pxPerSemi / 2);
+    }
+  });
+
+  // keyboard
+  for (let m = lowMidi; m <= highMidi; m++) {
+    const y = yOf(m + 0.5), pc = ((m % 12) + 12) % 12, black = [1, 3, 6, 8, 10].includes(pc);
+    g.fillStyle = black ? css("--black-key") : css("--white-key");
+    g.fillRect(0, y, KEY_W, state.pxPerSemi - 1);
+    if (pc === 0 || state.pxPerSemi >= 16) {
+      g.fillStyle = pc === 0 ? css("--text") : css("--muted"); g.fillText(midiName(m), 4, y + state.pxPerSemi / 2);
+    }
+  }
+  g.fillStyle = css("--panel"); g.fillRect(0, 0, w, RULER_H); g.fillRect(0, 0, KEY_W, RULER_H);
+  for (let t = Math.floor(state.t0 / step) * step; xOf(t) < w; t += step) {
+    if (xOf(t) >= KEY_W) { g.fillStyle = css("--muted"); g.fillText(t.toFixed(step < 1 ? 2 : 0) + "s", xOf(t) + 3, RULER_H / 2); }
+  }
+
+  // cursor / playhead
+  const x = xOf(currentTime());
+  if (x >= KEY_W && x <= w) { g.fillStyle = css("--play"); g.fillRect(x - 1, 0, 2, h); }
+  drawOverview();
+}
+
+function drawOverview() {
+  const w = overview.clientWidth, g = setupCanvas(overview, OVERVIEW_H);
+  g.fillStyle = css("--panel"); g.fillRect(0, 0, w, OVERVIEW_H);
+  if (!state.duration) return;
+  const sx = (t) => (t / state.duration) * w;
+  g.fillStyle = css("--note"); g.globalAlpha = 0.7;
+  const { times, midi } = state.pitch;
+  for (let i = 0; i < times.length; i++) {
+    if (midi[i] === null) continue;
+    const y = OVERVIEW_H - 6 - ((midi[i] - 36) / 60) * (OVERVIEW_H - 12);
+    g.fillRect(sx(times[i]), y, 1.2, 1.2);
+  }
+  g.globalAlpha = 1;
+  const visible = (roll.clientWidth - KEY_W) / state.pxPerSec;
+  g.strokeStyle = css("--accent"); g.lineWidth = 1.5;
+  g.strokeRect(sx(state.t0), 1, Math.max(3, sx(visible)), OVERVIEW_H - 2);
+  g.fillStyle = css("--play"); g.fillRect(sx(currentTime()) - 1, 0, 2, OVERVIEW_H);
+}
+
+function roundRect(g, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+
+// ---------- editing ----------
+function snapshot() { state.history.push(JSON.stringify(state.notes)); if (state.history.length > 200) state.history.shift(); }
+function changed() { state.dirty = true; updateStatus(); draw(); }
+function sortNotes() {
+  const sel = state.notes[state.selected];
+  state.notes.sort((a, b) => a.onset - b.onset || a.midi - b.midi);
+  state.selected = sel ? state.notes.indexOf(sel) : -1;
+}
+
+function hit(x, y) {
+  const t = tOf(x), m = mOf(y);
+  for (let i = state.notes.length - 1; i >= 0; i--) {
+    const n = state.notes[i];
+    if (m < n.midi - 0.5 || m > n.midi + 0.5) continue;
+    const x0 = xOf(n.onset), x1 = xOf(n.offset);
+    if (x < x0 - EDGE_PX || x > x1 + EDGE_PX) continue;
+    if (Math.abs(x - x0) <= EDGE_PX) return { i, part: "onset" };
+    if (Math.abs(x - x1) <= EDGE_PX) return { i, part: "offset" };
+    if (t >= n.onset && t <= n.offset) return { i, part: "body" };
+  }
+  return null;
+}
+
+roll.addEventListener("mousedown", (e) => {
+  const r = roll.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (x < KEY_W) return;
+  if (y < RULER_H) { setCursor(tOf(x)); return; }
+  const h = hit(x, y);
+  if (!h) { state.selected = -1; setCursor(tOf(x)); return; }
+  state.selected = h.i;
+  const n = state.notes[h.i];
+  state.drag = { ...h, startX: x, startY: y, orig: { ...n }, snapped: false };
+  draw();
+});
+window.addEventListener("mousemove", (e) => {
+  const r = roll.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (!state.drag) {
+    const h = x >= KEY_W && y >= RULER_H ? hit(x, y) : null;
+    roll.style.cursor = !h ? "crosshair" : h.part === "body" ? "ns-resize" : "ew-resize";
+    return;
+  }
+  const d = state.drag, n = state.notes[d.i];
+  if (!d.snapped && Math.hypot(x - d.startX, y - d.startY) < 3) return;
+  if (!d.snapped) { snapshot(); d.snapped = true; }
+  if (d.part === "body") {
+    const delta = (d.startY - y) / state.pxPerSemi;
+    n.midi = e.altKey ? Math.round((d.orig.midi + delta) * 10) / 10 : Math.round(d.orig.midi + delta);
+  } else if (d.part === "onset") {
+    n.onset = Math.max(0, Math.min(tOf(x), n.offset - 0.02));
+  } else {
+    n.offset = Math.min(state.duration, Math.max(tOf(x), n.onset + 0.02));
+  }
+  changed();
+});
+window.addEventListener("mouseup", () => { if (state.drag?.snapped) sortNotes(); state.drag = null; draw(); });
+
+roll.addEventListener("dblclick", (e) => {
+  const r = roll.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (x < KEY_W || y < RULER_H || hit(x, y)) return;
+  snapshot();
+  const t = tOf(x);
+  const n = { onset: Math.max(0, t - 0.1), offset: Math.min(state.duration, t + 0.1), midi: Math.round(mOf(y)) };
+  state.notes.push(n); sortNotes(); state.selected = state.notes.indexOf(n); changed();
+});
+
+roll.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const r = roll.getBoundingClientRect(), x = e.clientX - r.left;
+  if (e.ctrlKey || e.metaKey) {
+    const t = tOf(x);
+    state.pxPerSec = Math.max(10, Math.min(2000, state.pxPerSec * Math.exp(-e.deltaY * 0.0015)));
+    state.t0 = t - (x - KEY_W) / state.pxPerSec;
+  } else if (e.shiftKey) {
+    state.midiTop += Math.sign(e.deltaY || e.deltaX) * 2;
+  } else {
+    state.t0 += (e.deltaX || e.deltaY) / state.pxPerSec;
+  }
+  clampView(); draw();
+}, { passive: false });
+
+overview.addEventListener("mousedown", (e) => {
+  const r = overview.getBoundingClientRect();
+  const t = ((e.clientX - r.left) / overview.clientWidth) * state.duration;
+  const visible = (roll.clientWidth - KEY_W) / state.pxPerSec;
+  state.t0 = t - visible / 2; clampView(); setCursor(t);
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "SELECT") return;
+  const sel = state.notes[state.selected];
+  if (e.code === "Space") { e.preventDefault(); togglePlay(); }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+  else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(false); }
+  else if (e.key === "g" || e.key === "G") toggleGuide();
+  else if (!sel) return;
+  else if (e.key === "Delete" || e.key === "Backspace") {
+    e.preventDefault(); snapshot(); state.notes.splice(state.selected, 1); state.selected = -1; changed();
+  } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+    e.preventDefault(); snapshot(); sel.midi = Math.round(sel.midi) + (e.key === "ArrowUp" ? 1 : -1); changed();
+  } else if (e.key === "s" || e.key === "S") {
+    const t = currentTime();
+    if (t > sel.onset + 0.02 && t < sel.offset - 0.02) {
+      snapshot(); const right = { onset: t, offset: sel.offset, midi: sel.midi }; sel.offset = t;
+      state.notes.push(right); sortNotes(); changed();
+    } else flash("Put the cursor inside the selected note to split it");
+  } else if (e.key === "j" || e.key === "J") {
+    const next = state.notes[state.selected + 1];
+    if (!next) return flash("No next note to join");
+    snapshot();
+    const keepPitch = next.offset - next.onset > sel.offset - sel.onset ? next.midi : sel.midi;
+    sel.offset = Math.max(sel.offset, next.offset); sel.midi = keepPitch;
+    state.notes.splice(state.selected + 1, 1); changed();
+  }
+});
+
+function undo() {
+  if (!state.history.length) return flash("Nothing to undo");
+  state.notes = JSON.parse(state.history.pop()); state.selected = -1; changed();
+}
+
+// ---------- audio ----------
+function currentTime() {
+  if (!state.playing) return state.cursor;
+  return state.playStartT + (state.audioCtx.currentTime - state.playStartCtx);
+}
+function setCursor(t) {
+  const playing = state.playing;
+  if (playing) stop();
+  state.cursor = Math.max(0, Math.min(state.duration, t));
+  if (playing) play(); else draw();
+}
+async function ensureAudio() {
+  if (!state.audioCtx) state.audioCtx = new AudioContext();
+  if (state.audioCtx.state === "suspended") await state.audioCtx.resume();
+  if (!state.buffer) {
+    flash("Loading audio…");
+    const data = await (await fetch(`/audio/${encodeURIComponent(state.take)}.wav`)).arrayBuffer();
+    state.buffer = await state.audioCtx.decodeAudioData(data);
+  }
+}
+async function play() {
+  await ensureAudio();
+  const ctx = state.audioCtx, start = state.cursor >= state.duration - 0.05 ? 0 : state.cursor;
+  state.source = ctx.createBufferSource(); state.source.buffer = state.buffer;
+  const voice = ctx.createGain(); voice.gain.value = state.guide ? 0.6 : 1.0;
+  state.source.connect(voice).connect(ctx.destination);
+  state.playStartCtx = ctx.currentTime + 0.03; state.playStartT = start;
+  state.source.start(state.playStartCtx, start);
+  state.source.onended = () => { if (state.playing) { state.cursor = currentTime(); stop(); draw(); } };
+  if (state.guide) scheduleGuide(start);
+  state.playing = true; $("play").textContent = "⏸ Pause"; tick();
+}
+function scheduleGuide(start) {
+  const ctx = state.audioCtx;
+  for (const n of state.notes) {
+    if (n.offset <= start) continue;
+    const on = state.playStartCtx + Math.max(0, n.onset - start), off = state.playStartCtx + (n.offset - start);
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.type = "triangle"; osc.frequency.value = 440 * 2 ** ((n.midi - 69) / 12);
+    gain.gain.setValueAtTime(0, on); gain.gain.linearRampToValueAtTime(0.18, on + 0.01);
+    gain.gain.setValueAtTime(0.18, Math.max(on + 0.01, off - 0.02)); gain.gain.linearRampToValueAtTime(0, off);
+    osc.connect(gain).connect(ctx.destination); osc.start(on); osc.stop(off + 0.01);
+    state.guideNodes.push(osc);
+  }
+}
+function stop() {
+  if (state.source) { state.source.onended = null; try { state.source.stop(); } catch {} }
+  state.guideNodes.forEach((o) => { try { o.stop(); } catch {} }); state.guideNodes = [];
+  state.playing = false; $("play").textContent = "▶ Play";
+}
+function togglePlay() {
+  if (state.playing) { state.cursor = currentTime(); stop(); draw(); } else play();
+}
+function toggleGuide() {
+  state.guide = !state.guide; $("guide").classList.toggle("on", state.guide);
+  if (state.playing) { state.cursor = currentTime(); stop(); play(); }
+}
+function tick() {
+  if (!state.playing) return;
+  const t = currentTime(), visible = (roll.clientWidth - KEY_W) / state.pxPerSec;
+  if (t > state.t0 + visible * 0.9 || t < state.t0) { state.t0 = t - visible * 0.1; clampView(); }
+  draw(); requestAnimationFrame(tick);
+}
+
+// ---------- loading / saving ----------
+let flashTimer = null;
+function flash(text) { $("status").innerHTML = text; clearTimeout(flashTimer); flashTimer = setTimeout(updateStatus, 2500); }
+function updateStatus() {
+  if (!state.take) return;
+  const status = state.verified && !state.dirty ? "verified ✓" : state.dirty ? "unsaved changes" : "draft";
+  $("status").innerHTML = `<b>${state.notes.length}</b> notes · ${status}`;
+}
+
+async function loadTakes() {
+  const takes = await (await fetch("/api/takes")).json();
+  const sel = $("take"); sel.innerHTML = "";
+  if (!takes.length) {
+    $("message").innerHTML = "No takes found.<br>Copy your .wav files into <b>data/owner_takes/</b>, then reload this page.";
+    return;
+  }
+  for (const t of takes) {
+    const o = document.createElement("option"); o.value = t.take;
+    o.textContent = `${t.take}  (${t.status === "verified" ? "✓ verified" : t.status === "draft" ? "draft" : "not started"})`;
+    sel.appendChild(o);
+  }
+  const first = takes.find((t) => t.status !== "verified") || takes[0];
+  sel.value = first.take; await loadTake(first.take);
+}
+
+async function loadTake(take) {
+  if (state.playing) stop();
+  $("message").textContent = `Analysing ${take}… (first time can take a minute for long takes)`;
+  $("message").style.display = "flex";
+  const res = await fetch(`/api/take/${encodeURIComponent(take)}`);
+  const data = await res.json();
+  if (!res.ok) { $("message").textContent = data.error; return; }
+  Object.assign(state, { take, duration: data.duration, pitch: data.pitch, notes: data.notes,
+    verified: data.verified, dirty: false, history: [], selected: -1, t0: 0, cursor: 0, buffer: null });
+  state.pxPerSec = Math.max(40, Math.min(300, (roll.clientWidth - KEY_W) / Math.min(data.duration, 20)));
+  fitPitchRange();
+  $("message").style.display = "none";
+  updateStatus(); draw();
+  if (data.source === "guess") flash(`Showing a <b>first guess</b> of ${data.notes.length} notes: fix them, then save`);
+}
+
+async function save(verified) {
+  const res = await fetch(`/api/take/${encodeURIComponent(state.take)}/notes`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ notes: state.notes, verified }),
+  });
+  const data = await res.json();
+  if (!res.ok) return flash("Save failed: " + data.error);
+  state.dirty = false; state.verified = verified;
+  const opt = [...$("take").options].find((o) => o.value === state.take);
+  if (opt) opt.textContent = `${state.take}  (${verified ? "✓ verified" : "draft"})`;
+  flash(verified ? "Saved and marked <b>verified</b> ✓" : "Draft saved");
+}
+
+$("take").addEventListener("change", async (e) => {
+  if (state.dirty && !confirm("Discard unsaved changes to this take?")) { e.target.value = state.take; return; }
+  await loadTake(e.target.value);
+});
+$("play").addEventListener("click", togglePlay);
+$("guide").addEventListener("click", toggleGuide);
+$("undo").addEventListener("click", undo);
+$("save").addEventListener("click", () => save(false));
+$("verify").addEventListener("click", () => save(true));
+window.addEventListener("resize", () => { clampView(); draw(); });
+window.addEventListener("beforeunload", (e) => { if (state.dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+loadTakes().catch((err) => { $("message").textContent = "Could not reach the labeler server: " + err; });
+</script>
+</body>
+</html>
