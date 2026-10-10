@@ -46,22 +46,59 @@ class SegmenterParams:
     p_reattack: float = 0.0015  # sustain -> attack of the same pitch (needs onset evidence)
     p_start: float = 0.02  # silence -> attack
     onset_weight: float = 3.0  # how much onset strength favours attacks
+    onset_mix: float = 0.0  # 0 = spectral flux only, 1 = loudness rise only
+    motion_weight: float = 0.0  # how much a moving pitch favours attacks
     min_note_s: float = 0.06  # shorter notes are dropped
     trim_fraction: float = 0.2  # note pitch ignores this much at each end (scoops, falls)
 
 
+def _normalize(x: np.ndarray) -> np.ndarray:
+    scale = np.percentile(x, 99) if np.any(x > 0) else 1.0
+    return np.clip(x / max(scale, 1e-9), 0.0, 1.0)
+
+
 def _onset_strength(audio: np.ndarray, sample_rate: int, times: np.ndarray) -> np.ndarray:
-    """Spectral-flux onset strength resampled to the pitch frames, scaled to 0..1."""
+    """Spectral-flux onset strength (how much the spectrum changes), on the pitch frames, 0..1."""
     hop = 160 if sample_rate <= 16000 else 512
     env = librosa.onset.onset_strength(y=audio, sr=sample_rate, hop_length=hop)
     env_times = librosa.times_like(env, sr=sample_rate, hop_length=hop)
-    env = np.interp(times, env_times, env)
-    scale = np.percentile(env, 99) if np.any(env > 0) else 1.0
-    return np.clip(env / max(scale, 1e-9), 0.0, 1.0)
+    return _normalize(np.interp(times, env_times, env))
+
+
+def _loudness_rise(audio: np.ndarray, sample_rate: int, times: np.ndarray) -> np.ndarray:
+    """How much louder the voice got over the last ~60 ms, in dB, on the pitch frames, 0..1.
+
+    Sung notes usually start with a loudness rise (after a consonant or breath dip), even
+    when the pitch barely moves; this catches re-attacks spectral flux can miss."""
+    hop = max(1, int(round(0.005 * sample_rate)))  # 5 ms
+    rms = librosa.feature.rms(y=audio, frame_length=4 * hop, hop_length=hop)[0]
+    db = 20 * np.log10(np.maximum(rms, 1e-5))
+    look = 12  # 60 ms
+    padded = np.concatenate([np.full(look, db[0]), db])
+    recent_min = np.lib.stride_tricks.sliding_window_view(padded, look + 1)[:, :-1].min(axis=1)
+    rise = np.maximum(db - recent_min[: len(db)], 0.0)
+    rise_times = np.arange(len(rise)) * hop / sample_rate
+    return _normalize(np.interp(times, rise_times, rise))
+
+
+def _pitch_motion(midi: np.ndarray, hop_s: float) -> np.ndarray:
+    """How fast the pitch is moving (semitones per 30 ms, voiced frames only), 0..1."""
+    m = np.where(np.isfinite(midi), midi, np.nan)
+    step = max(1, int(round(0.03 / hop_s)))
+    motion = np.zeros(len(m))
+    if len(m) > step:
+        d = np.abs(m[step:] - m[:-step])
+        motion[step // 2 : step // 2 + len(d)] = np.nan_to_num(d, nan=0.0)
+    return np.clip(motion / 1.0, 0.0, 1.0)
 
 
 def _log_observations(
-    midi: np.ndarray, voiced: np.ndarray, onset: np.ndarray, pitches: np.ndarray, p: SegmenterParams
+    midi: np.ndarray,
+    voiced: np.ndarray,
+    onset: np.ndarray,
+    motion: np.ndarray,
+    pitches: np.ndarray,
+    p: SegmenterParams,
 ) -> np.ndarray:
     """log P(observation | state) for states [silence, attack(pitches), sustain(pitches)]."""
     n_frames, n_pitch = len(midi), len(pitches)
@@ -81,7 +118,11 @@ def _log_observations(
             voiced[None, :], np.log(g) + np.log(1 - p.unvoiced_in_note), np.log(p.unvoiced_in_note)
         )
 
-    out[1 : 1 + n_pitch] = pitched(p.attack_sigma) + p.onset_weight * np.log(0.05 + onset)[None, :]
+    out[1 : 1 + n_pitch] = (
+        pitched(p.attack_sigma)
+        + p.onset_weight * np.log(0.05 + onset)[None, :]
+        + p.motion_weight * np.log(0.05 + motion)[None, :]
+    )
     out[1 + n_pitch :] = pitched(p.sustain_sigma) + p.onset_weight * np.log(1.05 - onset)[None, :]
     return out
 
@@ -128,7 +169,9 @@ class Features:
     hop_s: float
     midi: np.ndarray  # NaN where unvoiced
     voiced: np.ndarray
-    onset: np.ndarray  # 0..1
+    onset: np.ndarray  # spectral flux, 0..1
+    rise: np.ndarray  # loudness rise, 0..1
+    motion: np.ndarray  # pitch motion, 0..1
     loud: np.ndarray  # RMS, for weighting the note pitch
 
 
@@ -145,13 +188,15 @@ def features(
         midi = np.where(voiced, 69 + 12 * np.log2(np.where(voiced, hz, 1.0) / 440.0), np.nan)
     if audio is not None and sample_rate:
         onset = _onset_strength(audio, sample_rate, times)
+        rise = _loudness_rise(audio, sample_rate, times)
         frame = max(1, int(round(hop_s * sample_rate)))
         rms = librosa.feature.rms(y=audio, frame_length=2 * frame, hop_length=frame)[0]
         loud = np.interp(times, np.arange(len(rms)) * hop_s, rms)
     else:
         onset = np.zeros_like(times)
+        rise = np.zeros_like(times)
         loud = np.ones_like(times)
-    return Features(times, hop_s, midi, voiced, onset, loud)
+    return Features(times, hop_s, midi, voiced, onset, rise, _pitch_motion(midi, hop_s), loud)
 
 
 def decode(f: Features, params: SegmenterParams | None = None) -> list[Note]:
@@ -159,7 +204,8 @@ def decode(f: Features, params: SegmenterParams | None = None) -> list[Note]:
     p = params or SegmenterParams()
     times, hop_s, midi = f.times, f.hop_s, f.midi
     pitches = np.arange(p.midi_low, p.midi_high + 1, dtype=float)
-    log_obs = _log_observations(np.nan_to_num(midi), f.voiced, f.onset, pitches, p)
+    onset = np.clip((1 - p.onset_mix) * f.onset + p.onset_mix * f.rise, 0.0, 1.0)
+    log_obs = _log_observations(np.nan_to_num(midi), f.voiced, onset, f.motion, pitches, p)
     # librosa's Viterbi takes probabilities; shift each frame so its best state is 1.
     prob = np.exp(log_obs - log_obs.max(axis=0, keepdims=True))
     trans = _transitions(len(pitches), p)

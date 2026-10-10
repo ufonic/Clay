@@ -12,6 +12,12 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-10 · FCPE tracker; note gate ≥ 0.70 with a known gap to human level
+- **Decision:** Clay uses **FCPE** for pitch tracking. The Phase 1 note gate is note F1 ≥ 0.70 on vocadito (was ≥ 0.740 = human agreement); the HMM segmenter scores 0.707 (2-fold cross-validated 0.709).
+- **Alternatives:** pYIN (MIR-1K RPA 0.964, false alarm 0.32), CREPE full (no better, ~180× slower on CPU); for notes, keep working until 0.740.
+- **Why:** FCPE is best on every pitch metric (MIR-1K RPA 0.988, false alarm 0.145, cents p95 23) at pYIN's speed, and exports to ONNX for C++. Notes: pitch on matched notes is human-level (13% vs 14% off by > 50 cents); the remaining gap is note boundaries (paired bootstrap: −0.033, 95% CI [−0.060, −0.006], so real but small). Parameter tuning saturated (held-out = defaults); loudness-rise and pitch-motion evidence added +0.002. Owner chose to move on and revisit.
+- **Revisit if:** blob splits feel wrong in Phase 3 editing, or before Phase 2 ports the segmenter (try a learned onset detector).
+
 ## 2026-10-10 · Note gate on public data (vocadito); Mac checkpoint A moved before Phase 3
 - **Decision:** the Phase 1 note-detection gate uses vocadito (40 solo vocals, two annotators) instead of the owner's labeled takes. Target: mean note F1 vs each annotator ≥ 0.740, which is how well the two annotators agree with each other. Mac checkpoint A (Logic + Live load) moves from the Phase 0 gate to just before Phase 3.
 - **Alternatives:** owner labels 5 takes (original plan); targets of 0.70 or 0.80; combining checkpoint A with B.

@@ -44,6 +44,8 @@ SPACE: dict[str, tuple[float, float, bool]] = {
     "p_reattack": (1e-5, 1e-2, True),
     "p_start": (1e-3, 1e-1, True),
     "onset_weight": (0.0, 6.0, False),
+    "onset_mix": (0.0, 1.0, False),
+    "motion_weight": (0.0, 3.0, False),
     "min_note_s": (0.03, 0.15, False),
     "trim_fraction": (0.0, 0.3, False),
 }

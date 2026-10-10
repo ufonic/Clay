@@ -183,14 +183,14 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 Phase 0 · Foundation: ✅ complete 2026-10-10 (Mac checkpoint A moved to before Phase 3; FL Studio/Bitwig hands-on at the Phase 4 gate).
 
 - [x] 1.1 pYIN baseline F0 tracker → harness baseline scores (MIR-1K + vocadito)
-- [ ] 1.2 CREPE and FCPE trackers; pick one with the owner (log in decisions.md)
-- [ ] 1.3 HMM note segmenter (pitch + energy + voicing), aimed at the vocadito note gate
+- [x] 1.2 CREPE and FCPE trackers: owner chose **FCPE** 2026-10-10 (MIR-1K RPA 0.988, false alarm 0.145)
+- [x] 1.3 HMM note segmenter: vocadito note F1 0.707 (2-fold CV 0.709); gate set to ≥ 0.70, known gap to human 0.740 to revisit
 - [ ] 1.4 Note model data structure + JSON serialization (shared schema for C++)
 - [ ] 1.5 WORLD-based pitch shift and formant preservation from the note model · 👂
 - [ ] 1.6 Time stretch per note (Rubber Band or Signalsmith; pick with owner) · 👂
 - [ ] 1.7 Render scripts: ±1, ±2 semitone and ±10% time versions of every clip
 
-**Gate:** note F1 (`note_f1_mean`) ≥ 0.740 on vocadito; RPA ≥ 0.95 on MIR-1K; cents error median ≤ 10 / p95 ≤ 50 on vocadito; 👂 owner hears no objectionable artifacts at ±2 semitones on 5 vocals.
+**Gate:** note F1 (`note_f1_mean`) ≥ 0.70 on vocadito (human agreement 0.740: known gap, revisit later); RPA ≥ 0.95 on MIR-1K; cents error median ≤ 10 / p95 ≤ 50 on vocadito; 👂 owner hears no objectionable artifacts at ±2 semitones on 5 vocals.
 
 ---
 
