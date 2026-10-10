@@ -55,7 +55,7 @@ Audio input ──> Analysis ──> Note model ──> Resynthesis ──> Audi
 /plugin       JUCE 9 plugin + standalone (VST3, AU, CLAP); ARA in Phase 4
 /m4l          Max for Live bridge device (JavaScript in Max + OSC)
 /third_party  Pinned submodules: JUCE, ARA SDK, clap-juce-extensions, etc.
-/data         Dataset download scripts (never commit audio datasets)
+/data         Downloaded datasets (gitignored) + README/LICENSES; download code in research/…/datasets
 /renders      Before/after WAVs for the owner's listening checks (gitignored)
 /docs         ROADMAP.md, module specs, decisions.md, UI mockups
 ```
@@ -134,18 +134,21 @@ tools\msvc.cmd ctest --preset windows-debug        # Catch2 tests
 "C:\Program Files\LLVM\bin\clang-format.exe" --dry-run --Werror <files>
 ```
 
+**Python (working).** Run from the repo root.
+
+```sh
+uv sync --project research                                   # install/refresh env
+uv run --project research pytest research                    # unit tests (real-data tests skip if not downloaded)
+uv run --project research ruff check . ; uv run --project research ruff format --check .
+uv run --project research python -m clay_research.datasets.download mir1k vocalset   # see data/README.md
+```
+
 > **Planned** (Phase 0 creates these; replace with the real ones as they work):
 
 ```sh
-# Python research
-uv sync --project research                       # install/refresh env
-uv run --project research pytest research        # unit tests
 uv run --project research python -m harness score --all     # scoring report → renders/reports/
-
-# Checks
 uv run --project research python tools/rt_lint.py engine plugin   # real-time safety lint
 pluginval --strictness-level 5 --validate <path-to-VST3>
-clang-format --dry-run --Werror <files>; uv run --project research ruff check .
 ```
 
 ---
@@ -180,7 +183,7 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 - [ ] 0.1 `git init`, GitHub repo, `.gitignore`, `.clang-format`, ruff config, `docs/decisions.md`
 - [x] 0.2 Pin JUCE 9, ARA SDK, clap-juce-extensions, Catch2 as submodules in `/third_party`
 - [x] 0.3 CMake skeleton + `CMakePresets.json`; GitHub Actions building on macOS and Windows
-- [ ] 0.4 `/research` uv project; dataset download scripts and a loader returning audio + labels
+- [x] 0.4 `/research` uv project; dataset download scripts and a loader returning audio + labels
 - [ ] 0.5 Scoring harness: note F1, raw pitch accuracy, cents error; one-command report
 - [ ] 0.6 Labeling script so the owner can label notes in 5 takes · 🖐 owner labels the takes
 - [ ] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + pluginval in CI · 🖐 owner loads it in Live, FL Studio, Bitwig on Windows; Mac hosts wait for 🍎 Mac checkpoint A

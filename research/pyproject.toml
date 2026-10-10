@@ -1,0 +1,29 @@
+[project]
+name = "clay-research"
+version = "0.1.0"
+description = "Clay research prototypes: datasets, scoring harness, DSP experiments"
+authors = [
+    { name = "Brendon Schweers", email = "137675675+ufonic@users.noreply.github.com" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "librosa>=1.0.0",
+    "mir-eval>=0.8.2",
+    "mirdata>=1.0.0",
+    "numpy>=2.5.3",
+    "scipy>=1.18.1",
+    "soundfile>=0.14.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff==0.17.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
