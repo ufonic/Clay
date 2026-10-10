@@ -31,17 +31,17 @@ Tick each box. If something fails, note what you saw (error text or screenshot) 
 **Live 12 · Transfer spike (task 0.8)**: does Clay record a clip and play it back in perfect sync?
 - [ ] In the Clay window, click **Transfer**, then play the clip in Live from a bit before it starts to a bit after it ends. "Captured" counts up. Stop Live, click **Stop transfer**.
 - [ ] Click **Play captured**. Mute nothing: play the same section again. It should sound exactly like before (you're now hearing Clay's copy).
-- [ ] Tick **Null test**, play the section again. You should hear **silence**, and "Null depth" should read about **−90 dB or lower ("sample-exact")**. Anything above −40 dB means it's out of sync: tell Claude the number.
+- [ ] Tick **Null test**, play the section again. You should hear **silence**, and "Null depth" should read **−70 dB or lower** (in sync; Live's playback isn't bit-identical between passes, so expect about −80 to −90, e.g. with Warp on). A one-sample offset reads around −40 dB or worse: tell Claude the number if it's above −70.
 - [ ] Repeat the null test after changing the set's tempo (e.g. 92 → 110 BPM) with the clip **warped**: capture again first (Transfer → play → Stop transfer), then Play captured + Null test. Same result expected.
 - [ ] Loop a 2-bar region and leave it looping for a few passes with Null test on: it stays silent.
 
-**FL Studio** (VST3 and CLAP)
+**FL Studio** (VST3 and CLAP) · *deferred to the Phase 4 gate*
 - [ ] Options → Manage plugins → Find installed plugins
 - [ ] Add Clay (VST3) to a mixer insert with audio playing: sound unchanged, window opens
 - [ ] Repeat with Clay (CLAP)
 - [ ] Save, close, reopen the project: Clay is still there
 
-**Bitwig** (VST3 and CLAP)
+**Bitwig** (VST3 and CLAP) · *deferred to the Phase 4 gate*
 - [ ] Settings → Locations: VST3 and CLAP folders listed; let it rescan
 - [ ] Add Clay (CLAP) to an audio track: sound unchanged, window opens
 - [ ] Repeat with Clay (VST3)

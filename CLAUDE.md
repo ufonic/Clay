@@ -185,14 +185,14 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 - [x] 0.4 `/research` uv project; dataset download scripts and a loader returning audio + labels
 - [x] 0.5 Scoring harness: note F1, raw pitch accuracy, cents error; one-command report
 - [ ] 0.6 Labeling script so the owner can label notes in 5 takes (tool done: `docs/labeling-guide.md`) · 🖐 owner labels the takes
-- [ ] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + pluginval in CI · 🖐 owner loads it in Live, FL Studio, Bitwig on Windows; Mac hosts wait for 🍎 Mac checkpoint A
-- [ ] 0.8 Transfer spike: record a Live clip into a buffer and play it back in sync (playhead, tempo, warping) (code done: Transfer + null test in the plugin; steps in `docs/host-check-windows.md`) · 🖐 owner verifies in Live
+- [ ] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + pluginval in CI · 🖐 Live 12 ✓ (2026-10-10: loads, passes audio, save/reopen); FL Studio + Bitwig hands-on deferred to the Phase 4 gate (covered meanwhile by pluginval + clap-validator in CI); Logic + Live on Mac at 🍎 Mac checkpoint A
+- [x] 0.8 Transfer spike: record a Live clip into a buffer and play it back in sync (playhead, tempo, warping) verified by owner in Live 12 (Windows) 2026-10-10: null test −80 to −85 dB, also with Warp + tempo change and looping
 - [x] 0.9 Real-time safety lint script and audio-thread stress test
 - [x] 0.10 Editor UI mockups (blob view, toolbar, inspector, multitrack): approved 2026-10-10, https://claude.ai/artifact/77BtemqUgsYvpv3hHK1REY
 - [x] 0.11 `SPEC.md` for the analysis module: approved 2026-10-10 (`docs/analysis/SPEC.md`)
 - [ ] 0.12 Replace § 7 planned commands with the real ones
 
-**Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in all four hosts on both platforms; the owner approves the mockups.
+**Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in Live on Windows and in Logic + Live at Mac checkpoint A (FL Studio and Bitwig: automated validators now, hands-on at the Phase 4 gate); the owner approves the mockups.
 
 ---
 

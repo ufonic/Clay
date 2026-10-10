@@ -12,6 +12,18 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-10 · FL Studio and Bitwig hands-on checks moved to Phase 4
+- **Decision:** Phase 0 no longer needs the owner to test FL Studio or Bitwig. They're covered by CI validators (pluginval for VST3, clap-validator for CLAP) until the Phase 4 gate, which already requires load + state recall in both. Mac checkpoint A shrinks to Logic + Live.
+- **Alternatives:** test all four hosts now (original plan).
+- **Why:** owner's request; Live (the primary host) and Transfer are already verified hands-on, and the validators exercise the same plugin-format code those hosts use.
+- **Revisit if:** a host-specific bug turns up in Live or Logic that the validators missed (then bring the FL/Bitwig check forward).
+
+## 2026-10-10 · Transfer verified in Live 12
+- **Decision:** the Phase 0 Transfer approach (capture indexed by host timeline sample, played back at the playhead) is confirmed in Live 12 on Windows: null test −80 to −85 dB, holding with Warp on, after a tempo change, and while looping. Live keeps Transfer as its path until the Max for Live bridge in Phase 4.
+- **Alternatives:** none needed; this was the spike's open risk.
+- **Why:** the residual isn't zero because Live's playback isn't bit-identical between passes; a one-sample offset would read about −40 dB or worse, so sync is sample-exact. "In sync" threshold set to −70 dB.
+- **Revisit if:** another host or Live version reads above −70 dB.
+
 ## 2026-10-10 · Editor mockups and analysis spec approved
 - **Decision:** owner approved the editor mockups (https://claude.ai/artifact/77BtemqUgsYvpv3hHK1REY: editor, note assignment mode, multitrack) and the analysis SPEC with all four proposed defaults: 5 ms frames, stereo as mid, C2–C6 default range, center pitch = amplitude-weighted median of the stable middle.
 - **Alternatives:** 10 ms frames; per-side stereo analysis; narrower or auto-detected range; whole-note average or settle-point center pitch.

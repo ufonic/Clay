@@ -73,7 +73,7 @@ void PluginEditor::timerCallback()
         const auto depth = processor_.nullDepthDb();
         text << "\nNull depth: "
              << (std::isfinite(depth) ? juce::String(depth, 1) + " dB" : juce::String("waiting for audio"))
-             << (std::isfinite(depth) && depth < -90.0f ? "  (sample-exact)" : "");
+             << (std::isfinite(depth) && depth < -70.0f ? "  (in sync)" : "  (out of sync?)");
     }
     if (text != status_)
     {
