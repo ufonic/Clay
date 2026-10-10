@@ -33,6 +33,7 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
     return out == layouts.getMainInputChannelSet();
 }
 
+// clay:realtime-begin
 void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     // Pass-through: input channels already hold the input, so leave them untouched.
@@ -41,6 +42,7 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     for (auto ch = getTotalNumInputChannels(); ch < getTotalNumOutputChannels(); ++ch)
         buffer.clear(ch, 0, buffer.getNumSamples());
 }
+// clay:realtime-end
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor()
 {

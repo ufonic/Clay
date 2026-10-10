@@ -32,6 +32,8 @@ jobs:
           if [ -n "$files" ]; then
             uvx "clang-format@${CLANG_FORMAT_VERSION}" --dry-run --Werror $files
           fi
+      - name: Real-time safety lint
+        run: python3 tools/rt_lint.py engine plugin
       - name: ruff
         run: |
           uvx "ruff@${RUFF_VERSION}" check .
@@ -45,7 +47,7 @@ jobs:
       - name: Install research environment
         run: uv sync --project research --locked
       - name: pytest (dataset tests skip when data isn't downloaded)
-        run: uv run --project research pytest research -rs
+        run: uv run --project research pytest research tools -rs
 
   windows:
     runs-on: windows-latest
