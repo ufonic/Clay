@@ -188,8 +188,8 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 - [ ] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + pluginval in CI · 🖐 owner loads it in Live, FL Studio, Bitwig on Windows; Mac hosts wait for 🍎 Mac checkpoint A
 - [ ] 0.8 Transfer spike: record a Live clip into a buffer and play it back in sync (playhead, tempo, warping) (code done: Transfer + null test in the plugin; steps in `docs/host-check-windows.md`) · 🖐 owner verifies in Live
 - [x] 0.9 Real-time safety lint script and audio-thread stress test
-- [ ] 0.10 Editor UI mockups (blob view, toolbar, inspector, multitrack) · 🖐 owner approves
-- [ ] 0.11 `SPEC.md` for the analysis module · owner confirms
+- [x] 0.10 Editor UI mockups (blob view, toolbar, inspector, multitrack): approved 2026-10-10, https://claude.ai/artifact/77BtemqUgsYvpv3hHK1REY
+- [x] 0.11 `SPEC.md` for the analysis module: approved 2026-10-10 (`docs/analysis/SPEC.md`)
 - [ ] 0.12 Replace § 7 planned commands with the real ones
 
 **Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in all four hosts on both platforms; the owner approves the mockups.
