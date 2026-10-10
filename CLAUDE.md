@@ -125,18 +125,24 @@ Audio input ──> Analysis ──> Note model ──> Resynthesis ──> Audi
 
 ## 7. Commands
 
-> Planned commands. Phase 0 creates them; update this section with the real ones as soon as they work.
+**C++ (working).** On Windows, MSVC needs its developer environment, so wrap each command in `tools\msvc.cmd` (from PowerShell/cmd). Presets: `windows-debug`, `windows-release`, `macos-debug`, `macos-release` (macOS = CI only).
+
+```sh
+tools\msvc.cmd cmake --preset windows-debug -DCLAY_WARNINGS_AS_ERRORS=ON
+tools\msvc.cmd cmake --build --preset windows-debug
+tools\msvc.cmd ctest --preset windows-debug        # Catch2 tests
+"C:\Program Files\LLVM\bin\clang-format.exe" --dry-run --Werror <files>
+```
+
+The local VS 2026 Build Tools install is flagged "incomplete" by the installer, so `tools\msvc.cmd` uses `vswhere -all`; the harmless "'vswhere.exe' is not recognized" line comes from that. A repair in Visual Studio Installer would remove it.
+
+> **Planned** (Phase 0 creates these; replace with the real ones as they work):
 
 ```sh
 # Python research
 uv sync --project research                       # install/refresh env
 uv run --project research pytest research        # unit tests
 uv run --project research python -m harness score --all     # scoring report → renders/reports/
-
-# C++ engine + plugin
-cmake --preset windows-release                   # or macos-release (CI only)
-cmake --build --preset windows-release
-ctest --preset windows-release                   # Catch2 + parity tests
 
 # Checks
 uv run --project research python tools/rt_lint.py engine plugin   # real-time safety lint
@@ -175,7 +181,7 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 
 - [ ] 0.1 `git init`, GitHub repo, `.gitignore`, `.clang-format`, ruff config, `docs/decisions.md`
 - [x] 0.2 Pin JUCE 9, ARA SDK, clap-juce-extensions, Catch2 as submodules in `/third_party`
-- [ ] 0.3 CMake skeleton + `CMakePresets.json`; GitHub Actions building on macOS and Windows
+- [x] 0.3 CMake skeleton + `CMakePresets.json`; GitHub Actions building on macOS and Windows
 - [ ] 0.4 `/research` uv project; dataset download scripts and a loader returning audio + labels
 - [ ] 0.5 Scoring harness: note F1, raw pitch accuracy, cents error; one-command report
 - [ ] 0.6 Labeling script so the owner can label notes in 5 takes · 🖐 owner labels the takes
