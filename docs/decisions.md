@@ -12,6 +12,24 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-11 · Public repo, AGPLv3, owner email removed from history
+- **Decision:** `ufonic/Clay` is now **public** and licensed **AGPLv3** (`LICENSE`). It was re-created with history rewritten by git-filter-repo so commits and `research/pyproject.toml` carry the owner's GitHub noreply address instead of their Gmail. The old private repo is kept as `ufonic/Clay-archive` (old PRs #1–#19 live there only). Commits use the noreply address from now on.
+- **Alternatives:** stay private and pay for Actions minutes or self-host runners (owner's PC for Windows, old MacBook for macOS); rewrite history in place (GitHub keeps old PR commits forever, so the email would stay visible).
+- **Why:** the private repo ran out of free Actions minutes (Windows counts 2x, macOS 10x); public repos get free hosted runners, including Apple Silicon macOS. AGPLv3 matches JUCE's licence, which applies once source and CI-built plugins are public. Self-hosted runners were removed: unsafe on public repos.
+- **Revisit if:** the owner wants it private again (then budget for Actions minutes).
+
+## 2026-10-11 · ONNX Runtime 1.23.2 for FCPE in C++
+- **Decision:** run FCPE's network in C++ with **ONNX Runtime 1.23.2** prebuilt binaries (win-x64, osx-universal2; SHA-256 pinned). Python research is pinned to the same version. The model (`engine/models/fcpe_c_v001.onnx`, 43 MB, MIT) is committed. Mel spectrogram, resampling, and the pitch decoder are ported by hand and parity-tested.
+- **Alternatives:** ONNX Runtime 1.24–1.31 (no Intel Mac builds: Apple Silicon only since 1.24); building ONNX Runtime from source for x86_64 (much slower CI); hand-writing the network in C++ (rule 4: prefer libraries).
+- **Why:** 1.23.2 is the newest release with a universal macOS build, and the owner's Mac is Intel. Opset 17 is well within its support. A year-old stable release is fine for offline analysis.
+- **Revisit if:** Clay stops needing Intel Macs, or a needed fix lands only in newer ONNX Runtime (then build x86_64 from source or drop Intel).
+
+## 2026-10-11 · C++ dependencies for Phase 2: nlohmann/json, WORLD
+- **Decision:** add **nlohmann/json v3.12.0** (MIT, header-only, submodule `third_party/nlohmann_json`) for reading/writing note model files in the engine. **WORLD** (modified BSD) is approved by the owner for the C++ resynthesis port (task 2.4), pinned to the commit pyworld 0.3.5 builds from so render parity can reach −60 dB.
+- **Alternatives:** JUCE's `juce::JSON` (would pull juce_core into the JUCE-free engine and risk duplicate-symbol clashes with the plugin); a hand-written parser (CLAUDE.md rule 4: prefer libraries).
+- **Why:** de-facto standard, tiny, keeps the engine independent of JUCE. The owner delegated library choices ("do whatever you think is best"); flagged in the Phase 2 summary.
+- **Revisit if:** the owner objects, or file size/parse speed matters (binary format in 2.6's cache).
+
 ## 2026-10-11 · Rubber Band for time stretch; Phase 1 complete
 - **Decision:** Clay stretches time with **Rubber Band R3** (GPLv2; fine for personal use). Owner accepted it at ±10% on 5 vocals; occasional small pops = minor. Phase 1 gate passed: note F1 0.707 ≥ 0.70, MIR-1K RPA 0.988, vocadito cents error median 3.6 / p95 24.6, ±2 st accepted.
 - **Alternatives:** blind test vs Signalsmith Stretch (close second) and WORLD frame resampling (phasey).
