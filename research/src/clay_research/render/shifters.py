@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import numpy as np
 
+RB_BLOCK = 65536  # samples per Rubber Band process() call (library limit is 2**19)
+
 
 def world(audio: np.ndarray, sr: int, semitones: float, model=None) -> np.ndarray:
     from clay_research.analysis.analyze import analyze
@@ -42,9 +44,21 @@ def rubberband(audio: np.ndarray, sr: int, semitones: float) -> np.ndarray:
     rb = pylibrb.RubberBandStretcher(sr, 1, opts, 1.0, 2.0 ** (semitones / 12.0))
     x = pylibrb.reorder_to_rb(np.asarray(audio, dtype=pylibrb.DType)[:, None], 0)
     rb.set_expected_input_duration(len(audio))
+    rb.set_max_process_size(RB_BLOCK)
     rb.study(x, final=True)
-    rb.process(x, final=True)
     out = []
+    # process() takes at most RB_BLOCK samples per call (a single call with a whole song
+    # silently processed only the first ~12 s; the owner heard audio missing).
+    for start in range(0, len(audio), RB_BLOCK):
+        block = (
+            x[..., start : start + RB_BLOCK]
+            if pylibrb.SAMPLES_AXIS
+            else x[start : start + RB_BLOCK]
+        )
+        rb.process(block, final=start + RB_BLOCK >= len(audio))
+        chunk = rb.retrieve_available()
+        if chunk.size:
+            out.append(chunk)
     while not rb.is_done():
         chunk = rb.retrieve_available()
         if chunk.size:
