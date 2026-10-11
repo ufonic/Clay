@@ -31,6 +31,7 @@ SCHEMA = "clay.note_model"
 VERSION = 1
 HOP_S = 0.005  # SPEC decision 1: 5 ms frames
 TRANSITION_S = 0.03  # edits fade in/out over 30 ms at note edges so pitch never jumps
+BRIDGE_S = 0.3  # gaps between notes up to this long glide from one note's edit to the next
 
 
 @dataclass(frozen=True)
@@ -82,22 +83,39 @@ class NoteModel:
 
     # --- what to render ---
     def _edit_curves(self) -> dict[str, np.ndarray]:
-        """Per-frame edit amounts, faded over TRANSITION_S at each note edge."""
+        """Per-frame edit amounts. Each note's edit holds from onset to offset. A short gap
+        between two notes (a slide, scoop, or breath, up to BRIDGE_S) glides from one note's
+        edit to the next, so sound between notes moves with them instead of snapping back
+        to the original pitch. Before the first note, after the last, and across longer
+        gaps, the edit fades to zero over TRANSITION_S."""
         t = self.times
-        curves = {k: np.zeros(len(t)) for k in ("pitch", "formant", "gain", "flatten", "weight")}
         fade = max(TRANSITION_S, self.hop_s)
-        for n in self.notes:
-            # Trapezoid: 0 before onset - fade/2, 1 inside, 0 after offset + fade/2.
-            w = np.clip(
-                np.minimum(t - (n.onset - fade / 2), (n.offset + fade / 2) - t) / fade, 0.0, 1.0
+        notes = sorted(self.notes, key=lambda n: n.onset)
+        values = {
+            "pitch": lambda e: e.pitch_shift_st,
+            "formant": lambda e: e.formant_shift_st,
+            "gain": lambda e: e.gain_db,
+            "flatten": lambda e: 1.0 - e.drift_scale,
+        }
+        if not notes:
+            return {k: np.zeros(len(t)) for k in values}
+        # Knots of a piecewise-linear curve: (time, note index or None for "no edit").
+        knots: list[tuple[float, int | None]] = [(notes[0].onset - fade, None)]
+        for i, n in enumerate(notes):
+            start = max(n.onset, knots[-1][0])
+            knots += [(start, i), (max(n.offset, start), i)]
+            nxt = notes[i + 1].onset if i + 1 < len(notes) else None
+            if nxt is None or nxt - n.offset > BRIDGE_S:
+                knots.append((knots[-1][0] + fade, None))
+                if nxt is not None:
+                    knots.append((max(nxt - fade, knots[-1][0]), None))
+        xs = np.array([k[0] for k in knots])
+        return {
+            name: np.interp(
+                t, xs, [0.0 if i is None else get(notes[i].edit) for _, i in knots], 0.0, 0.0
             )
-            e = n.edit
-            curves["pitch"] += w * e.pitch_shift_st
-            curves["formant"] += w * e.formant_shift_st
-            curves["gain"] += w * e.gain_db
-            curves["flatten"] += w * (1.0 - e.drift_scale)
-            curves["weight"] += w
-        return curves
+            for name, get in values.items()
+        }
 
     def target_f0_midi(self) -> np.ndarray:
         """The pitch to render per frame: each note's center + shift, plus its drift scaled."""

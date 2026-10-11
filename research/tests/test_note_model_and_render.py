@@ -78,6 +78,24 @@ def test_edits_fade_in_at_note_edges_so_pitch_never_jumps():
     assert np.max(np.abs(np.diff(target))) < 3.0 / 3  # spread over several frames
 
 
+def test_voiced_gap_between_notes_moves_with_them():
+    # Two notes with a 0.1 s voiced slide between them: a whole-vocal shift must cover it.
+    f0 = list(np.linspace(60.0, 62.0, 200))
+    m = tiny_model(f0, [ModelNote(0.0, 0.45, 60.0), ModelNote(0.55, 1.0, 62.0)])
+    shift = m.with_all_edits(pitch_shift_st=2.0).target_f0_midi() - m.f0_midi
+    np.testing.assert_allclose(shift[:190], 2.0)
+    # Different edits on each side glide across the gap instead of jumping.
+    glide = m.with_edit(0, pitch_shift_st=-1.0).with_edit(1, pitch_shift_st=1.0)
+    assert np.max(np.abs(np.diff(glide.target_f0_midi() - m.f0_midi))) < 0.15
+
+
+def test_long_gap_fades_edit_out():
+    f0 = [60.0] * 400  # 2 s
+    m = tiny_model(f0, [ModelNote(0.0, 0.5, 60.0), ModelNote(1.5, 2.0, 60.0)])
+    shift = m.with_all_edits(pitch_shift_st=2.0).target_f0_midi() - m.f0_midi
+    assert shift[200] == 0.0  # 1.0 s: middle of a 1 s gap, no edit
+
+
 def test_formant_warp_moves_envelope_peak():
     bins = np.arange(513)
     sp = np.exp(-0.5 * ((bins - 100) / 10.0) ** 2)[None, :]
