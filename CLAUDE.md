@@ -149,6 +149,8 @@ uv run --project research python -m clay_research.datasets.download mir1k vocals
 uv run --project research python -m clay_research.labeling.server   # note labeler for the owner's takes (docs/labeling-guide.md)
 uv run --project research python -m clay_research.render.listening_set   # Phase 1 before/after renders -> renders/phase1/
 uv run --project research python -m clay_research.render.shift_compare   # blind pitch-shifter comparison (also time_compare)
+uv run --project research python -m clay_research.parity.fcpe_dataset vocadito mir1k   # C++ vs Python FCPE on real vocals (build engine first)
+uv run --project research python -m clay_research.parity.note_model_fixtures            # regenerate C++ parity fixtures (also fcpe_fixtures, export_fcpe)
 uv run --project research python -m clay_research.harness.score --dataset mir1k --baseline research/baselines/mir1k_pyin.json
     # scoring report -> renders/reports/; add --clip <ID> to score one clip; exits 1 if worse than baseline
 ```
@@ -188,8 +190,8 @@ Phase 0 · Foundation: ✅ complete 2026-10-10 (Mac checkpoint A moved to before
 
 Phase 1 · Python prototype: ✅ complete 2026-10-11. FCPE pitch tracker; HMM segmenter (vocadito note F1 0.707 ≥ 0.70, human 0.740: known gap, revisit before 2.3); note model + JSON; **WORLD** for pitch (owner accepted ±2 st, slight phasiness = minor; Rubber Band was comparable in a blind test); **Rubber Band R3** for time (owner accepted ±10%, occasional small pops = minor); breaths/noise between notes stay original audio. Renders: `listening_set`, `shift_compare`, `time_compare` in `clay_research.render`.
 
-- [ ] 2.1 Engine library skeleton, note model in C++ reading the Phase 1 JSON schema · round-trip vs Python
-- [ ] 2.2 Port the F0 tracker (FCPE via ONNX Runtime) · analysis parity
+- [x] 2.1 Note model in C++ (`clay::model::NoteModel`, `docs/model/SPEC.md`): reads/writes the Phase 1 JSON; curves match Python within 1e-9
+- [x] 2.2 FCPE in C++ (`clay::analysis::FcpeTracker`, ONNX Runtime 1.23.2 + PFFFT): parity on all 40 vocadito + 1000 MIR-1K clips (voicing 100%, max 0.25 cents); ~21× real time
 - [ ] 2.3 Port the segmenter · analysis parity
 - [ ] 2.4 Port resynthesis (WORLD + original-audio splice) + time stretch (Rubber Band) · render parity
 - [ ] 2.5 Stereo handling and 44.1/48/88.2/96 kHz on every module · parameterized tests

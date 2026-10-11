@@ -29,6 +29,12 @@ target_link_libraries(clay_analysis PUBLIC clay::engine PRIVATE onnxruntime::onn
 clay_set_warnings(clay_analysis)
 
 if(CLAY_BUILD_TESTS)
+    # Command-line tools for parity checks on real datasets (driven from research/).
+    add_executable(clay_fcpe tools/clay_fcpe.cpp)
+    target_link_libraries(clay_fcpe PRIVATE clay::analysis)
+    clay_set_warnings(clay_fcpe)
+    clay_copy_onnxruntime(clay_fcpe)
+
     add_executable(clay_engine_tests
         tests/FcpeNetworkTests.cpp
         tests/FcpeTests.cpp
