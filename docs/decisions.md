@@ -12,6 +12,12 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-11 · Rubber Band for time stretch; Phase 1 complete
+- **Decision:** Clay stretches time with **Rubber Band R3** (GPLv2; fine for personal use). Owner accepted it at ±10% on 5 vocals; occasional small pops = minor. Phase 1 gate passed: note F1 0.707 ≥ 0.70, MIR-1K RPA 0.988, vocadito cents error median 3.6 / p95 24.6, ±2 st accepted.
+- **Alternatives:** blind test vs Signalsmith Stretch (close second) and WORLD frame resampling (phasey).
+- **Why:** best by ear; also has formant-preserving pitch shift if WORLD's phasiness ever needs a fallback (owner found it comparable, better on female vocals).
+- **Revisit if:** the pops become audible in real edits (no clipping or sample jumps found; likely consonants/mouth clicks made more noticeable), or Signalsmith gains features we need (MIT would matter only if Clay were ever distributed).
+
 ## 2026-10-11 · Keep WORLD for pitch; Phase 1 pitch listening gate passed
 - **Decision:** WORLD stays Clay's pitch engine. Owner accepted WORLD at ±2 st on 5 vocals: the slight phasiness on held notes is "minor".
 - **Alternatives:** blind test vs Rubber Band R3 (owner: comparable; better on female vocals, WORLD better on male), PSOLA ("fuzzy"), Signalsmith without formants ("tinny").
