@@ -77,7 +77,9 @@ Audio input ──> Analysis ──> Note model ──> Resynthesis ──> Audi
 | CLAP | clap-juce-extensions |
 | ARA | Celemony ARA SDK 2 through JUCE's built-in ARA support (`juce_audio_plugin_client` ARA wrapper). Use the SDK and JUCE ARA examples as reference; do not hand-wire the raw SDK |
 | Neural inference in C++ | ONNX Runtime |
-| Time stretching | Rubber Band (GPL) or Signalsmith Stretch (MIT) |
+| Time stretching | Rubber Band R3 (GPL), chosen by ear 2026-10-11 |
+| Resynthesis (pitch) | WORLD vocoder (pyworld in research; WORLD C++ in the engine), chosen by ear 2026-10-11 |
+| JSON (note model files) | nlohmann/json (MIT, header-only) |
 | Polyphonic note detection baseline | Spotify Basic Pitch |
 | FFT/DSP | PFFFT or KFR, Eigen |
 | Live bridge | Max for Live device + OSC/IPC |

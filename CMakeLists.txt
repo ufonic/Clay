@@ -37,6 +37,11 @@ if(CLAY_BUILD_TESTS)
     include(Catch)
 endif()
 
+# nlohmann/json (MIT, header-only): reads/writes note model files. SYSTEM keeps its
+# headers out of our warnings-as-errors.
+set(JSON_Install OFF CACHE INTERNAL "")
+add_subdirectory(third_party/nlohmann_json EXCLUDE_FROM_ALL SYSTEM)
+
 add_subdirectory(engine)
 
 if(CLAY_BUILD_PLUGIN)

@@ -12,6 +12,12 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-11 · C++ dependencies for Phase 2: nlohmann/json, WORLD
+- **Decision:** add **nlohmann/json v3.12.0** (MIT, header-only, submodule `third_party/nlohmann_json`) for reading/writing note model files in the engine. **WORLD** (modified BSD) is approved by the owner for the C++ resynthesis port (task 2.4), pinned to the commit pyworld 0.3.5 builds from so render parity can reach −60 dB.
+- **Alternatives:** JUCE's `juce::JSON` (would pull juce_core into the JUCE-free engine and risk duplicate-symbol clashes with the plugin); a hand-written parser (CLAUDE.md rule 4: prefer libraries).
+- **Why:** de-facto standard, tiny, keeps the engine independent of JUCE. The owner delegated library choices ("do whatever you think is best"); flagged in the Phase 2 summary.
+- **Revisit if:** the owner objects, or file size/parse speed matters (binary format in 2.6's cache).
+
 ## 2026-10-11 · Rubber Band for time stretch; Phase 1 complete
 - **Decision:** Clay stretches time with **Rubber Band R3** (GPLv2; fine for personal use). Owner accepted it at ±10% on 5 vocals; occasional small pops = minor. Phase 1 gate passed: note F1 0.707 ≥ 0.70, MIR-1K RPA 0.988, vocadito cents error median 3.6 / p95 24.6, ±2 st accepted.
 - **Alternatives:** blind test vs Signalsmith Stretch (close second) and WORLD frame resampling (phasey).
