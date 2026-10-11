@@ -12,6 +12,12 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-11 · Keep WORLD for pitch; Phase 1 pitch listening gate passed
+- **Decision:** WORLD stays Clay's pitch engine. Owner accepted WORLD at ±2 st on 5 vocals: the slight phasiness on held notes is "minor".
+- **Alternatives:** blind test vs Rubber Band R3 (owner: comparable; better on female vocals, WORLD better on male), PSOLA ("fuzzy"), Signalsmith without formants ("tinny").
+- **Why:** sound was close, and WORLD fits the note model: exact per-frame pitch for per-note edits and drift flattening, separate formant control, small C++ library to port.
+- **Revisit if:** phasiness bothers the owner in real editing. First try WORLD-side improvements (envelope resolution, aperiodicity tuning for high voices), then a per-voice option using Rubber Band for female vocals.
+
 ## 2026-10-11 · Rendering: original audio between notes; pitch-shifter comparison
 - **Decision:** the renderer rebuilds only the notes; breaths and noise between notes stay the original recording (20 ms crossfade). A high-pass below the singer's lowest note removes WORLD's sub-bass. For the comparison with WORLD, research adds three pitch-shift libraries: pylibrb 0.1.2 (Rubber Band, GPLv2), praat-parselmouth 0.4.7 (PSOLA, GPLv3), python-stretch 0.3.1 (Signalsmith Stretch, MIT; this binding lacks formant preservation).
 - **Alternatives:** a breath gate on the pitch track (zero-crossing rate + pitch stability) and WORLD's StoneMask pitch refinement. Both tried and removed: the gate unvoiced whole sung notes, StoneMask wandered up to 3 st inside held notes, and the owner heard glitches on long notes.

@@ -187,7 +187,7 @@ Phase 0 · Foundation: ✅ complete 2026-10-10 (Mac checkpoint A moved to before
 - [x] 1.2 CREPE and FCPE trackers: owner chose **FCPE** 2026-10-10 (MIR-1K RPA 0.988, false alarm 0.145)
 - [x] 1.3 HMM note segmenter: vocadito note F1 0.707 (2-fold CV 0.709); gate set to ≥ 0.70, known gap to human 0.740 to revisit
 - [x] 1.4 Note model + JSON (`clay_research.model.note_model`; analysis kept separate from per-note edits)
-- [ ] 1.5 WORLD-based pitch shift and formant preservation from the note model (code done: `clay_research.render.world`) · 👂 owner listens to `renders/phase1/pitch/`
+- [x] 1.5 WORLD-based pitch shift and formant preservation (`clay_research.render.world`): owner accepted ±2 st 2026-10-11 (slight phasiness = minor; WORLD beat Rubber Band, PSOLA, Signalsmith in a blind test, `python -m clay_research.render.shift_compare`)
 - [ ] 1.6 Time stretch per note (Rubber Band or Signalsmith; pick with owner) · 👂
 - [ ] 1.7 Render scripts: ±1, ±2 semitone (done: `python -m clay_research.render.listening_set`) and ±10% time (after 1.6)
 
@@ -219,5 +219,8 @@ Phase 0 · Foundation: ✅ complete 2026-10-10 (Mac checkpoint A moved to before
 ---
 
 ## 13. Learned rules
+
+- Test audio code on full-length clips (≥ 30 s), not just short synthetic ones: library block-size limits hide there (Rubber Band went silent after 12 s).
+- Before building on a render fix, check that it doesn't damage held notes: measure voicing and pitch inside long notes (a breath gate and StoneMask both broke them).
 
 <!-- One line per correction from the owner: "- YYYY-MM-DD: <rule>" -->
