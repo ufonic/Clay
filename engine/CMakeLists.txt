@@ -21,15 +21,17 @@ clay_set_warnings(clay_engine)
 # shared library, which the plugin can't load from a DAW's plugin folder yet; the plugin
 # links it once that's solved (Phase 3).
 add_library(clay_analysis STATIC
+    src/analysis/Fcpe.cpp
     src/analysis/FcpeNetwork.cpp
 )
 add_library(clay::analysis ALIAS clay_analysis)
-target_link_libraries(clay_analysis PUBLIC clay::engine PRIVATE onnxruntime::onnxruntime)
+target_link_libraries(clay_analysis PUBLIC clay::engine PRIVATE onnxruntime::onnxruntime PFFFT::PFFFT)
 clay_set_warnings(clay_analysis)
 
 if(CLAY_BUILD_TESTS)
     add_executable(clay_engine_tests
         tests/FcpeNetworkTests.cpp
+        tests/FcpeTests.cpp
         tests/NoteModelTests.cpp
         tests/TransferBufferTests.cpp
         tests/VersionTests.cpp

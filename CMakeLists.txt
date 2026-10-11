@@ -44,6 +44,17 @@ add_subdirectory(third_party/nlohmann_json EXCLUDE_FROM_ALL SYSTEM)
 
 include(cmake/OnnxRuntime.cmake)
 
+# PFFFT (BSD-style, FFTPACK licence): FFTs for analysis. Float only; no -march flags, so the
+# universal macOS build compiles SSE for x86_64 and NEON for arm64 from the same sources.
+set(PFFFT_USE_TYPE_DOUBLE OFF CACHE BOOL "" FORCE)
+set(PFFFT_USE_FFTPACK OFF CACHE BOOL "" FORCE)
+# (INSTALL_PFFFT stays ON: PFFFT 1.1.0 always exports its install set and fails without it.
+# Clay never runs `cmake --install`, so nothing is installed.)
+unset(INSTALL_PFFFT CACHE)
+set(TARGET_C_ARCH "none" CACHE STRING "" FORCE)
+set(TARGET_CXX_ARCH "none" CACHE STRING "" FORCE)
+add_subdirectory(third_party/pffft EXCLUDE_FROM_ALL SYSTEM)
+
 add_subdirectory(engine)
 
 if(CLAY_BUILD_PLUGIN)
