@@ -118,7 +118,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         for r in bad[:20]:
             print(
-                f"  FAIL {r.clip}: voicing {r.voicing:.4f}, median {r.median_cents:.3f}, max {r.max_cents:.3f}"
+                f"  FAIL {r.clip}: voicing {r.voicing:.4f}, "
+                f"median {r.median_cents:.3f}, max {r.max_cents:.3f}"
             )
     return 1 if failed else 0
 
