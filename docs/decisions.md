@@ -12,6 +12,12 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-11 · ONNX Runtime 1.23.2 for FCPE in C++
+- **Decision:** run FCPE's network in C++ with **ONNX Runtime 1.23.2** prebuilt binaries (win-x64, osx-universal2; SHA-256 pinned). Python research is pinned to the same version. The model (`engine/models/fcpe_c_v001.onnx`, 43 MB, MIT) is committed. Mel spectrogram, resampling, and the pitch decoder are ported by hand and parity-tested.
+- **Alternatives:** ONNX Runtime 1.24–1.31 (no Intel Mac builds: Apple Silicon only since 1.24); building ONNX Runtime from source for x86_64 (much slower CI); hand-writing the network in C++ (rule 4: prefer libraries).
+- **Why:** 1.23.2 is the newest release with a universal macOS build, and the owner's Mac is Intel. Opset 17 is well within its support. A year-old stable release is fine for offline analysis.
+- **Revisit if:** Clay stops needing Intel Macs, or a needed fix lands only in newer ONNX Runtime (then build x86_64 from source or drop Intel).
+
 ## 2026-10-11 · C++ dependencies for Phase 2: nlohmann/json, WORLD
 - **Decision:** add **nlohmann/json v3.12.0** (MIT, header-only, submodule `third_party/nlohmann_json`) for reading/writing note model files in the engine. **WORLD** (modified BSD) is approved by the owner for the C++ resynthesis port (task 2.4), pinned to the commit pyworld 0.3.5 builds from so render parity can reach −60 dB.
 - **Alternatives:** JUCE's `juce::JSON` (would pull juce_core into the JUCE-free engine and risk duplicate-symbol clashes with the plugin); a hand-written parser (CLAUDE.md rule 4: prefer libraries).
