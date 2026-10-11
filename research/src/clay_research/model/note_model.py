@@ -129,6 +129,21 @@ class NoteModel:
         drift = np.where(np.isfinite(center), f0 - center, 0.0)
         return f0 + curves["pitch"] - curves["flatten"] * drift
 
+    def note_span(self) -> np.ndarray:
+        """Per frame: True inside a note, within TRANSITION_S of one, or in a gap of up to
+        BRIDGE_S between two notes, i.e. everywhere an edit can reach. Everything else
+        (breaths, silence, noise between phrases) can be left as the original audio."""
+        t = self.times
+        fade = max(TRANSITION_S, self.hop_s)
+        span = np.zeros(len(t), dtype=bool)
+        notes = sorted(self.notes, key=lambda n: n.onset)
+        for i, n in enumerate(notes):
+            end = n.offset + fade
+            if i + 1 < len(notes) and notes[i + 1].onset - n.offset <= BRIDGE_S:
+                end = notes[i + 1].onset
+            span |= (t >= n.onset - fade) & (t <= end)
+        return span
+
     def formant_shift_st(self) -> np.ndarray:
         return self._edit_curves()["formant"]
 

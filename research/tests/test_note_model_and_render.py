@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import scipy.signal
 
-from clay_research.analysis.analyze import analyze, breath_gate, frame_count
+from clay_research.analysis.analyze import analyze, frame_count
 from clay_research.harness.trackers import fcpe
 from clay_research.model.note_model import ModelNote, NoteEdit, NoteModel
 from clay_research.render.world import _warp_envelope, render
@@ -120,25 +120,23 @@ def test_world_render_shifts_pitch_by_the_edit(shift):
     assert pitch_change(x, y) == pytest.approx(shift, abs=0.1)
 
 
-def test_breath_gate_unvoices_hiss_keeps_singing():
-    rng = np.random.default_rng(0)
-    tone = sung([62], seconds_each=0.5)
-    breath = (0.05 * rng.standard_normal(int(0.4 * SR))).astype(np.float32)
-    x = np.concatenate([breath, tone])
-    n = frame_count(len(x), SR)
-    f0 = np.full(n, 62.0)  # pretend the tracker called everything voiced
-    gated = breath_gate(x, SR, f0)
-    t = np.arange(n) * 0.005
-    assert np.mean(np.isfinite(gated[(t > 0.05) & (t < 0.35)])) < 0.1  # breath -> unvoiced
-    assert np.mean(np.isfinite(gated[(t > 0.5) & (t < 0.85)])) > 0.95  # singing kept
-
-
 def test_render_has_no_sub_bass():
     x = sung([69, 72], vibrato=0.2)  # A4/C5: nothing real below 70 Hz
     y = render(x, analyze(x, SR))
     sos = scipy.signal.butter(4, 60, "lowpass", fs=SR, output="sos")
     low = scipy.signal.sosfilt(sos, y)
     assert 10 * np.log10(np.sum(low**2) / np.sum(y**2)) < -45
+
+
+def test_audio_outside_notes_is_the_original():
+    rng = np.random.default_rng(1)
+    breath = (0.03 * rng.standard_normal(int(0.6 * SR))).astype(np.float32)
+    x = np.concatenate([breath, sung([62])])
+    m = analyze(x, SR)
+    assert m.notes and m.notes[0].onset > 0.4  # the breath is not a note
+    y = render(x, m.with_all_edits(pitch_shift_st=2.0))
+    head = slice(0, int(0.3 * SR))
+    np.testing.assert_allclose(y[head], x[head], atol=1e-6)
 
 
 def test_neutral_render_keeps_pitch():

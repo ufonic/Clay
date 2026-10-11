@@ -9,6 +9,9 @@ It can rebuild the sound from those ingredients. To change pitch we hand it a ne
 the *same* envelope, so the voice keeps its character instead of sounding like a
 chipmunk. A formant shift stretches the envelope along the frequency axis on purpose.
 
+Only the notes are rebuilt. Breaths and noise between phrases stay the original
+recording (crossfaded), because WORLD turns them into a warbly "phaser" tone.
+
 What to listen for: a slightly "buzzy" or "phasey" quality on held notes, roughness on
 very breathy or creaky passages, and smeared consonants. Those are WORLD's typical
 artifacts; the owner judges whether they're acceptable at ±2 semitones (Phase 1 gate).
@@ -24,6 +27,7 @@ from clay_research.datasets.common import midi_to_hz
 from clay_research.model.note_model import NoteModel
 
 SUB_BASS_MAX_HZ = 70.0
+SPLICE_FADE_S = 0.02  # crossfade between rebuilt notes and original breaths
 
 
 def _warp_envelope(sp: np.ndarray, shift_st: np.ndarray) -> np.ndarray:
@@ -38,27 +42,15 @@ def _warp_envelope(sp: np.ndarray, shift_st: np.ndarray) -> np.ndarray:
     return out
 
 
-def world_parameters(
-    audio: np.ndarray, model: NoteModel, refine_f0: bool = True
-) -> tuple[np.ndarray, ...]:
+def world_parameters(audio: np.ndarray, model: NoteModel) -> tuple[np.ndarray, ...]:
     """WORLD's three ingredients for one channel, using the model's analysed pitch.
 
-    refine_f0: WORLD's StoneMask nudges each voiced frame's pitch to the exact period in
-    the waveform. The envelope analysis lines up with the real harmonics, and the rebuild
-    is less "phasey" than with the tracker's coarser 10 ms pitch."""
+    (Tried 2026-10-11 and removed: WORLD's StoneMask pitch refinement. It wandered up to
+    3 semitones inside held notes, and the owner heard glitches on long notes.)"""
     x = np.ascontiguousarray(audio, dtype=np.float64)
     fs = model.sample_rate
     t = model.times
     f0 = np.where(np.isfinite(model.f0_midi), midi_to_hz(np.nan_to_num(model.f0_midi)), 0.0)
-    if refine_f0:
-        refined = pyworld.stonemask(x, f0, t, fs)
-        # StoneMask can wander on rough frames; keep its fix only within a semitone.
-        ok = (
-            (f0 > 0)
-            & (refined > 0)
-            & (np.abs(np.log2(np.maximum(refined, 1) / np.maximum(f0, 1))) < 1 / 12)
-        )
-        f0 = np.where(ok, refined, f0)
     sp = pyworld.cheaptrick(x, f0, t, fs)
     ap = pyworld.d4c(x, f0, t, fs)
     return f0, sp, ap
@@ -75,27 +67,48 @@ def _remove_sub_bass(y: np.ndarray, model: NoteModel) -> np.ndarray:
     return scipy.signal.sosfiltfilt(sos, y)
 
 
-def render(
-    audio: np.ndarray, model: NoteModel, refine_f0: bool = True, high_pass: bool = True
-) -> np.ndarray:
+def _per_sample(frames: np.ndarray, model: NoteModel, n: int) -> np.ndarray:
+    return np.interp(np.arange(n) / model.sample_rate, model.times, frames)
+
+
+def resynth_weight(model: NoteModel, n: int) -> np.ndarray:
+    """Per sample: 1 = use WORLD's rebuild, 0 = use the original recording. WORLD is only
+    needed where notes are (that's where edits happen); breaths and noise between phrases
+    stay original (owner heard WORLD turn them into a "phaser" warble on every clip).
+    Switches crossfade over SPLICE_FADE_S."""
+    span = model.note_span().astype(float)
+    k = max(1, int(round(SPLICE_FADE_S / model.hop_s)))
+    smooth = np.convolve(span, np.ones(k) / k, mode="same")
+    return np.clip(_per_sample(smooth, model, n), 0.0, 1.0)
+
+
+def render(audio: np.ndarray, model: NoteModel, high_pass: bool = True) -> np.ndarray:
     """Audio for the model's edits. Mono or (samples, channels); each channel is rebuilt
     with the same edits (SPEC decision 2)."""
     if audio.ndim == 2:
         return np.stack(
-            [render(audio[:, c], model, refine_f0, high_pass) for c in range(audio.shape[1])],
-            axis=1,
+            [render(audio[:, c], model, high_pass) for c in range(audio.shape[1])], axis=1
         )
-    f0, sp, ap = world_parameters(audio, model, refine_f0)
-    # The edit is a change relative to the analysed pitch; apply it to the (refined) f0.
-    analysed = np.nan_to_num(model.f0_midi)
-    shift = np.nan_to_num(model.target_f0_midi() - analysed)
-    f0_out = np.where(f0 > 0, f0 * 2.0 ** (shift / 12.0), 0.0)
+    original = np.asarray(audio, dtype=np.float64)
+    f0, sp, ap = world_parameters(original, model)
+    target = model.target_f0_midi()
+    f0_out = np.where((f0 > 0) & np.isfinite(target), midi_to_hz(np.nan_to_num(target)), 0.0)
+    gain_db = model.gain_db()
     sp_out = _warp_envelope(sp, model.formant_shift_st())
-    sp_out = sp_out * (10.0 ** (model.gain_db() / 10.0))[:, None]  # envelope is power
+    sp_out = sp_out * (10.0 ** (gain_db / 10.0))[:, None]  # envelope is power
     y = pyworld.synthesize(f0_out, sp_out, ap, model.sample_rate, model.hop_s * 1000.0)
-    y = y[: len(audio)]
-    if len(y) < len(audio):
-        y = np.pad(y, (0, len(audio) - len(y)))
+    y = y[: len(original)]
+    if len(y) < len(original):
+        y = np.pad(y, (0, len(original) - len(y)))
     if high_pass:
         y = _remove_sub_bass(y, model)
-    return y.astype(np.float32)
+
+    n = len(original)
+    w = resynth_weight(model, n)
+    # WORLD's rebuild comes out ~1.5 dB hot; match it to the original where notes are
+    # unedited in gain, so splices into the original audio don't jump in level.
+    ref = (w > 0.99) & (np.abs(_per_sample(gain_db, model, n)) < 1e-6)
+    if np.any(ref):
+        y *= np.sqrt(np.mean(original[ref] ** 2) / max(np.mean(y[ref] ** 2), 1e-20))
+    kept = original * 10.0 ** (_per_sample(gain_db, model, n) / 20.0)
+    return (w * y + (1.0 - w) * kept).astype(np.float32)
