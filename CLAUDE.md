@@ -146,6 +146,7 @@ uv run --project research ruff check . ; uv run --project research ruff format -
 uv run --project research python -m clay_research.datasets.download mir1k vocalset   # see data/README.md
 uv run --project research python -m clay_research.labeling.server   # note labeler for the owner's takes (docs/labeling-guide.md)
 uv run --project research python -m clay_research.render.listening_set   # Phase 1 before/after renders -> renders/phase1/
+uv run --project research python -m clay_research.render.shift_compare   # blind pitch-shifter comparison (also time_compare)
 uv run --project research python -m clay_research.harness.score --dataset mir1k --baseline research/baselines/mir1k_pyin.json
     # scoring report -> renders/reports/; add --clip <ID> to score one clip; exits 1 if worse than baseline
 ```
@@ -179,19 +180,21 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 
 ## 10. Current phase
 
-**Current phase: 1 · Python prototype** (started 2026-10-10; update this section as phases complete; full plan in `docs/ROADMAP.md`)
+**Current phase: 2 · C++ engine port** (Phase 1 complete 2026-10-11; update this section as phases complete; full plan in `docs/ROADMAP.md`)
 
 Phase 0 · Foundation: ✅ complete 2026-10-10 (Mac checkpoint A moved to before Phase 3; FL Studio/Bitwig hands-on at the Phase 4 gate).
 
-- [x] 1.1 pYIN baseline F0 tracker → harness baseline scores (MIR-1K + vocadito)
-- [x] 1.2 CREPE and FCPE trackers: owner chose **FCPE** 2026-10-10 (MIR-1K RPA 0.988, false alarm 0.145)
-- [x] 1.3 HMM note segmenter: vocadito note F1 0.707 (2-fold CV 0.709); gate set to ≥ 0.70, known gap to human 0.740 to revisit
-- [x] 1.4 Note model + JSON (`clay_research.model.note_model`; analysis kept separate from per-note edits)
-- [x] 1.5 WORLD-based pitch shift and formant preservation (`clay_research.render.world`): owner accepted ±2 st 2026-10-11 (slight phasiness = minor; WORLD beat Rubber Band, PSOLA, Signalsmith in a blind test, `python -m clay_research.render.shift_compare`)
-- [ ] 1.6 Time stretch per note (Rubber Band or Signalsmith; pick with owner) · 👂
-- [ ] 1.7 Render scripts: ±1, ±2 semitone (done: `python -m clay_research.render.listening_set`) and ±10% time (after 1.6)
+Phase 1 · Python prototype: ✅ complete 2026-10-11. FCPE pitch tracker; HMM segmenter (vocadito note F1 0.707 ≥ 0.70, human 0.740: known gap, revisit before 2.3); note model + JSON; **WORLD** for pitch (owner accepted ±2 st, slight phasiness = minor; Rubber Band was comparable in a blind test); **Rubber Band R3** for time (owner accepted ±10%, occasional small pops = minor); breaths/noise between notes stay original audio. Renders: `listening_set`, `shift_compare`, `time_compare` in `clay_research.render`.
 
-**Gate:** note F1 (`note_f1_mean`) ≥ 0.70 on vocadito (human agreement 0.740: known gap, revisit later); RPA ≥ 0.95 on MIR-1K; cents error median ≤ 10 / p95 ≤ 50 on vocadito; 👂 owner hears no objectionable artifacts at ±2 semitones on 5 vocals.
+- [ ] 2.1 Engine library skeleton, note model in C++ reading the Phase 1 JSON schema · round-trip vs Python
+- [ ] 2.2 Port the F0 tracker (FCPE via ONNX Runtime) · analysis parity
+- [ ] 2.3 Port the segmenter · analysis parity
+- [ ] 2.4 Port resynthesis (WORLD + original-audio splice) + time stretch (Rubber Band) · render parity
+- [ ] 2.5 Stereo handling and 44.1/48/88.2/96 kHz on every module · parameterized tests
+- [ ] 2.6 Analysis cache on disk (versioned format) · invalidation tests
+- [ ] 2.7 Benchmarks in CI (track, don't gate) · benchmark report
+
+**Gate:** analysis and render parity pass on every clip; render speed ≥ 10× real time; real-time lint passes; 👂 owner spot-checks 3 C++ renders against Python.
 
 ---
 

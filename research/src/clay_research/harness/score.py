@@ -34,6 +34,7 @@ from .metrics import frame_scores, note_scores
 from .trackers import TRACKERS
 
 DATASETS = {"mir1k": mir1k, "vocadito": vocadito}
+NOTE_F1_GATE = 0.70  # owner-approved 2026-10-10 (docs/decisions.md); human level is 0.740
 # Pitch track -> notes. "guess" is the labeler's simple first-guess segmenter (baseline);
 # Phase 1 adds the HMM segmenter.
 SEGMENTERS = {
@@ -208,12 +209,13 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{args.tracker} on {args.dataset}: {len(rows)} clips in {seconds:.0f} s")
     for k in (k for k in SUMMARY_METRICS if k in summary):
         print(f"  {k:22s} {summary[k]:.4f}")
-    target = getattr(DATASETS[args.dataset], "HUMAN_AGREEMENT_F1", None)
-    if target is not None and "note_f1_mean" in summary:
-        verdict = "meets" if summary["note_f1_mean"] >= target else "below"
+    human = getattr(DATASETS[args.dataset], "HUMAN_AGREEMENT_F1", None)
+    if human is not None and "note_f1_mean" in summary:
+        f1 = summary["note_f1_mean"]
+        verdict = "passes" if f1 >= NOTE_F1_GATE else "fails"
         print(
-            f"  Phase 1 note gate: {summary['note_f1_mean']:.3f} {verdict} "
-            f"human agreement {target:.3f}"
+            f"  Phase 1 note gate: {f1:.3f} {verdict} >= {NOTE_F1_GATE:.2f} "
+            f"(human agreement {human:.3f}, gap {f1 - human:+.3f})"
         )
     if comparison:
         print("Against baseline:\n" + "\n".join(comparison))
