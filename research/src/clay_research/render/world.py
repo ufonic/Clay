@@ -103,12 +103,20 @@ def render(audio: np.ndarray, model: NoteModel, high_pass: bool = True) -> np.nd
     if high_pass:
         y = _remove_sub_bass(y, model)
 
+    return splice(original, y, model)
+
+
+def splice(original: np.ndarray, rebuilt: np.ndarray, model: NoteModel) -> np.ndarray:
+    """Use `rebuilt` where notes are and the original recording elsewhere (crossfaded).
+    The rebuild is level-matched to the original where notes are unedited in gain (WORLD
+    comes out ~1.5 dB hot), so splices don't jump in level."""
+    original = np.asarray(original, dtype=np.float64)
+    y = np.asarray(rebuilt, dtype=np.float64).copy()
     n = len(original)
     w = resynth_weight(model, n)
-    # WORLD's rebuild comes out ~1.5 dB hot; match it to the original where notes are
-    # unedited in gain, so splices into the original audio don't jump in level.
-    ref = (w > 0.99) & (np.abs(_per_sample(gain_db, model, n)) < 1e-6)
+    gain = _per_sample(model.gain_db(), model, n)
+    ref = (w > 0.99) & (np.abs(gain) < 1e-6)
     if np.any(ref):
         y *= np.sqrt(np.mean(original[ref] ** 2) / max(np.mean(y[ref] ** 2), 1e-20))
-    kept = original * 10.0 ** (_per_sample(gain_db, model, n) / 20.0)
+    kept = original * 10.0 ** (gain / 20.0)
     return (w * y + (1.0 - w) * kept).astype(np.float32)

@@ -12,6 +12,12 @@ One entry per significant decision, newest first. Format:
 
 ---
 
+## 2026-10-11 · Rendering: original audio between notes; pitch-shifter comparison
+- **Decision:** the renderer rebuilds only the notes; breaths and noise between notes stay the original recording (20 ms crossfade). A high-pass below the singer's lowest note removes WORLD's sub-bass. For the comparison with WORLD, research adds three pitch-shift libraries: pylibrb 0.1.2 (Rubber Band, GPLv2), praat-parselmouth 0.4.7 (PSOLA, GPLv3), python-stretch 0.3.1 (Signalsmith Stretch, MIT; this binding lacks formant preservation).
+- **Alternatives:** a breath gate on the pitch track (zero-crossing rate + pitch stability) and WORLD's StoneMask pitch refinement. Both tried and removed: the gate unvoiced whole sung notes, StoneMask wandered up to 3 st inside held notes, and the owner heard glitches on long notes.
+- **Why:** owner heard a phaser/warble on inhales in every WORLD render (WORLD makes even the noise of a "voiced" frame pitched), plus sub-bass. The splice fixed the inhales by ear. Shifted notes still sound "a little phasey" (WORLD's own sound), so the owner compares methods blind (`python -m clay_research.render.shift_compare`). The owner delegated library choice for comparisons.
+- **Revisit if:** the owner picks a non-WORLD method (then decide how per-note edits, drift and formant shift map onto it), or Phase 2 needs a C++ port of the winner.
+
 ## 2026-10-10 · FCPE tracker; note gate ≥ 0.70 with a known gap to human level
 - **Decision:** Clay uses **FCPE** for pitch tracking. The Phase 1 note gate is note F1 ≥ 0.70 on vocadito (was ≥ 0.740 = human agreement); the HMM segmenter scores 0.707 (2-fold cross-validated 0.709).
 - **Alternatives:** pYIN (MIR-1K RPA 0.964, false alarm 0.32), CREPE full (no better, ~180× slower on CPU); for notes, keep working until 0.740.
