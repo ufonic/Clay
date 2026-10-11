@@ -42,6 +42,8 @@ endif()
 set(JSON_Install OFF CACHE INTERNAL "")
 add_subdirectory(third_party/nlohmann_json EXCLUDE_FROM_ALL SYSTEM)
 
+include(cmake/OnnxRuntime.cmake)
+
 add_subdirectory(engine)
 
 if(CLAY_BUILD_PLUGIN)
