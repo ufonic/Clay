@@ -178,22 +178,19 @@ Write download and loader scripts. Never commit the audio itself. Check each dat
 
 ## 10. Current phase
 
-**Current phase: 0 · Foundation** (update this section as phases complete; full plan in `docs/ROADMAP.md`)
+**Current phase: 1 · Python prototype** (started 2026-10-10; update this section as phases complete; full plan in `docs/ROADMAP.md`)
 
-- [x] 0.1 `git init`, GitHub repo, `.gitignore`, `.clang-format`, ruff config, `docs/decisions.md`
-- [x] 0.2 Pin JUCE 9, ARA SDK, clap-juce-extensions, Catch2 as submodules in `/third_party`
-- [x] 0.3 CMake skeleton + `CMakePresets.json`; GitHub Actions building on macOS and Windows
-- [x] 0.4 `/research` uv project; dataset download scripts and a loader returning audio + labels
-- [x] 0.5 Scoring harness: note F1, raw pitch accuracy, cents error; one-command report
-- [x] 0.6 Labeling tool (`docs/labeling-guide.md`). Owner labeling is optional: the note gate uses vocadito (decision 2026-10-10)
-- [x] 0.7 Pass-through JUCE plugin (VST3, AU, CLAP) + validators in CI · 🖐 Live 12 ✓ (2026-10-10: loads, passes audio, save/reopen); FL Studio + Bitwig hands-on at the Phase 4 gate; Logic + Live on Mac at 🍎 checkpoint A, before Phase 3
-- [x] 0.8 Transfer spike: record a Live clip into a buffer and play it back in sync (playhead, tempo, warping) verified by owner in Live 12 (Windows) 2026-10-10: null test −80 to −85 dB, also with Warp + tempo change and looping
-- [x] 0.9 Real-time safety lint script and audio-thread stress test
-- [x] 0.10 Editor UI mockups (blob view, toolbar, inspector, multitrack): approved 2026-10-10, https://claude.ai/artifact/77BtemqUgsYvpv3hHK1REY
-- [x] 0.11 `SPEC.md` for the analysis module: approved 2026-10-10 (`docs/analysis/SPEC.md`)
-- [x] 0.12 Replace § 7 planned commands with the real ones
+Phase 0 · Foundation: ✅ complete 2026-10-10 (Mac checkpoint A moved to before Phase 3; FL Studio/Bitwig hands-on at the Phase 4 gate).
 
-**Gate:** one command scores a reference vocal end to end; the pass-through plugin loads in Live on Windows (FL Studio and Bitwig: validators now, hands-on at the Phase 4 gate; Mac checkpoint A before Phase 3); the owner approves the mockups.
+- [x] 1.1 pYIN baseline F0 tracker → harness baseline scores (MIR-1K + vocadito)
+- [x] 1.2 CREPE and FCPE trackers: owner chose **FCPE** 2026-10-10 (MIR-1K RPA 0.988, false alarm 0.145)
+- [x] 1.3 HMM note segmenter: vocadito note F1 0.707 (2-fold CV 0.709); gate set to ≥ 0.70, known gap to human 0.740 to revisit
+- [ ] 1.4 Note model data structure + JSON serialization (shared schema for C++)
+- [ ] 1.5 WORLD-based pitch shift and formant preservation from the note model · 👂
+- [ ] 1.6 Time stretch per note (Rubber Band or Signalsmith; pick with owner) · 👂
+- [ ] 1.7 Render scripts: ±1, ±2 semitone and ±10% time versions of every clip
+
+**Gate:** note F1 (`note_f1_mean`) ≥ 0.70 on vocadito (human agreement 0.740: known gap, revisit later); RPA ≥ 0.95 on MIR-1K; cents error median ≤ 10 / p95 ≤ 50 on vocadito; 👂 owner hears no objectionable artifacts at ±2 semitones on 5 vocals.
 
 ---
 

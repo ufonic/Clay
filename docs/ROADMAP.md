@@ -146,7 +146,7 @@ Goal: prove analysis and monophonic resynthesis sound good, in Python, before wr
 | 1.7 | Render scripts: ±1, ±2 semitone and ±10% time versions of every clip | renders exist |
 
 **Gate:**
-- Note F1 (`note_f1_mean`) ≥ **0.740 on vocadito**: as good as a second human (the two annotators agree at 0.740). Baseline 0.556.
+- Note F1 (`note_f1_mean`) ≥ **0.70 on vocadito** (owner decision 2026-10-10). Human agreement is 0.740; Clay's HMM reaches 0.707 (CV 0.709), human-level on note pitch but ~0.03 short on note boundaries. Known gap, revisit later (e.g. a learned onset detector). Baseline was 0.556.
 - RPA ≥ 0.95 on MIR-1K (baseline 0.964); cents error median ≤ 10, 95th percentile ≤ 50 on vocadito (baseline 8.5 / 57.8).
 - 👂 Owner hears no objectionable artifacts at ±2 semitones on 5 vocals (public: VocalSet / vocadito; the owner's own takes if available).
 

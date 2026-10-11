@@ -25,6 +25,7 @@ from pathlib import Path
 
 import numpy as np
 
+from clay_research.analysis.notes import segment
 from clay_research.datasets import mir1k, vocadito
 from clay_research.datasets.common import REPO_ROOT
 from clay_research.labeling.guess import guess_notes
@@ -35,7 +36,10 @@ from .trackers import TRACKERS
 DATASETS = {"mir1k": mir1k, "vocadito": vocadito}
 # Pitch track -> notes. "guess" is the labeler's simple first-guess segmenter (baseline);
 # Phase 1 adds the HMM segmenter.
-SEGMENTERS = {"guess": guess_notes}
+SEGMENTERS = {
+    "guess": lambda track, audio, sr: guess_notes(track),
+    "hmm": lambda track, audio, sr: segment(track, audio, sr),
+}
 
 # Summary metrics and which direction is better (+1 higher, -1 lower). A report only
 # includes the ones its dataset can measure.
@@ -68,7 +72,7 @@ def score_clip(job: Job) -> dict:
         row.update(frame_scores(clip.pitch, est).as_dict())
     annotators = getattr(module, "ANNOTATORS", ())
     if annotators:
-        est_notes = SEGMENTERS[job.segmenter](est)
+        est_notes = SEGMENTERS[job.segmenter](est, clip.audio, clip.sample_rate)
         f1s = []
         for a in annotators:
             f1 = note_scores(module.load_notes(job.clip_id, a), est_notes).f1
